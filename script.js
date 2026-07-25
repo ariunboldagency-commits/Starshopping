@@ -2,11 +2,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 /* ========================================================================
    DATA
-   The shape below is the contract with the sheet. When the Apps Script web
-   app is deployed, only this one line changes — it returns the same JSON,
-   so nothing downstream has to be touched.
+   Live catalogue comes from the Apps Script web app bound to the shop's
+   sheet, so products, prices, discounts and photos are edited there rather
+   than in code. The bundled JSON stays as a fallback: if Google is slow,
+   over quota, or the deployment is mid-update, the shop still renders
+   instead of showing an empty page.
    ===================================================================== */
-const DATA_SOURCE = "data/catalog.json";
+const DATA_SOURCE =
+  "https://script.google.com/macros/s/AKfycbyRz34Hm9SqKxFSAxbQ9L83lfn3WzBn-wWYl_3jTMbEali3DpgAisWJ9O_JxhN-qd7QiQ/exec";
+const DATA_FALLBACK = "data/catalog.json";
 
 let DB = { shop: {}, categories: [], products: [] };
 
@@ -459,8 +463,19 @@ window.addEventListener("hashchange", route);
 /* ========================================================================
    BOOT
    ===================================================================== */
-fetch(DATA_SOURCE)
-  .then((r) => r.json())
+function loadCatalog() {
+  return fetch(DATA_SOURCE)
+    .then((r) => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .catch((err) => {
+      console.warn("Sheet-ээс уншиж чадсангүй, локал каталог руу шилжлээ:", err);
+      return fetch(DATA_FALLBACK).then((r) => r.json());
+    });
+}
+
+loadCatalog()
   .then((data) => {
     DB = {
       shop: data.shop || {},
