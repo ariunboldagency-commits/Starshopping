@@ -48,6 +48,11 @@ const ORDER_HEADERS = [
    ==================================================================== */
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error(
+      'Sheet олдсонгүй. Энэ скриптийг Sheet дотроос Extensions → Apps Script гэж нээгээрэй.'
+    );
+  }
 
   // CSV-ээр орж ирсэн эхний хуудсыг Products болгож нэрлэнэ
   const first = ss.getSheets()[0];
@@ -84,7 +89,13 @@ function setup() {
     ScriptApp.newTrigger('archiveOld').timeBased().everyHours(12).create();
   }
 
-  SpreadsheetApp.getUi().alert('Бэлэн боллоо. Дараа нь Deploy → New deployment хийнэ үү.');
+  // Санамж: энд SpreadsheetApp.getUi().alert() хэрэглэж болохгүй. Скриптийг
+  // засварлагчаас Run хийхэд тэр цонх Sheet-ийн таб дээр гарч, хэн ч хариулахгүй
+  // тул скрипт 6 минутын хязгаарт хүртэл гацдаг.
+  Logger.log('Бэлэн боллоо. Tab-ууд: ' + ss.getSheets().map(function (s) {
+    return s.getName();
+  }).join(', '));
+  Logger.log('Дараа нь Deploy → New deployment → Web app хийнэ үү.');
 }
 
 /* ====================================================================
