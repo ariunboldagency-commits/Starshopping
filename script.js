@@ -42,32 +42,33 @@ gsap.fromTo(
   }
 );
 
-/* ---- the two categories trade places, the way the reference cycles its
-   colourways. Auto-advance pauses while the section is off screen. ---- */
+/* ---- browsing the categories: arrows step through them, and they also
+   advance on their own while the section is on screen ---- */
 const cards = Array.from(document.querySelectorAll(".cat"));
-const dots = Array.from(document.querySelectorAll(".dot"));
+const arrows = Array.from(document.querySelectorAll(".arrow"));
+const counter = document.getElementById("catIndex");
 let current = 0;
 let timer = null;
 
 const showCat = (i) => {
-  current = i;
-  cards.forEach((c, n) => c.classList.toggle("is-active", n === i));
-  dots.forEach((d, n) => d.classList.toggle("is-active", n === i));
+  current = (i + cards.length) % cards.length;
+  cards.forEach((c, n) => c.classList.toggle("is-active", n === current));
+  counter.textContent = String(current + 1).padStart(2, "0");
 };
 
 const startCycle = () => {
   stopCycle();
-  timer = setInterval(() => showCat((current + 1) % cards.length), 3800);
+  timer = setInterval(() => showCat(current + 1), 5000);
 };
 const stopCycle = () => {
   if (timer) clearInterval(timer);
   timer = null;
 };
 
-dots.forEach((dot) =>
-  dot.addEventListener("click", () => {
-    showCat(Number(dot.dataset.cat));
-    startCycle(); // restart the clock so a manual pick gets its full turn
+arrows.forEach((arrow) =>
+  arrow.addEventListener("click", () => {
+    showCat(current + Number(arrow.dataset.dir));
+    startCycle(); // a manual pick gets a full turn before auto-advance resumes
   })
 );
 
@@ -86,10 +87,10 @@ const edge = document.querySelector(".edge");
 
 const setSection = (id) => {
   railLines.forEach((l) => l.classList.toggle("is-active", l.dataset.goto === id));
-  edge.classList.toggle("is-shown", id !== "detail");
+  edge.classList.toggle("is-shown", true);
 };
 
-["hero", "cats", "detail"].forEach((id) => {
+["hero", "cats"].forEach((id) => {
   ScrollTrigger.create({
     trigger: `#${id}`,
     start: "top 55%",
@@ -104,25 +105,4 @@ railLines.forEach((line) =>
   line.addEventListener("click", () =>
     document.getElementById(line.dataset.goto)?.scrollIntoView({ behavior: "smooth" })
   )
-);
-
-/* ========================================================================
-   4 · product options
-   ===================================================================== */
-const bars = document.querySelectorAll(".bar");
-const layers = document.querySelectorAll(".layer");
-
-bars.forEach((bar) =>
-  bar.addEventListener("click", () => {
-    const v = bar.dataset.variant;
-    bars.forEach((b) => b.classList.toggle("is-active", b === bar));
-    layers.forEach((l) => l.classList.toggle("is-active", l.dataset.variant === v));
-  })
-);
-
-const sizes = document.querySelectorAll(".size");
-sizes.forEach((size) =>
-  size.addEventListener("click", () => {
-    sizes.forEach((s) => s.classList.toggle("is-active", s === size));
-  })
 );

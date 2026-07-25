@@ -24,7 +24,6 @@
 <nav class="rail" aria-label="Хуудасны явц">
   <button class="rail__line is-active" data-goto="hero" aria-label="Нүүр"></button>
   <button class="rail__line" data-goto="cats" aria-label="Категори"></button>
-  <button class="rail__line" data-goto="detail" aria-label="Бүтээгдэхүүн"></button>
 </nav>
 
 <aside class="edge" aria-hidden="true">
@@ -51,76 +50,43 @@
     <span class="hero__cue">доош гүйлгэнэ үү</span>
   </section>
 
-  <!-- 2 · categories emerge out of the darkness, and swap one by one ------ -->
+  <!-- 2 · categories emerge out of the darkness: name left, product right -->
   <section class="cats" id="cats">
     <div class="cats__emerge">
 
-      <span class="cats__eyebrow">КАТЕГОРИ</span>
+      <span class="cats__eyebrow">КАТЕГОРИ · <span id="catIndex">01</span> / 02</span>
 
       <div class="cats__stage">
         <article class="cat is-active" data-cat="0">
-          <span class="cat__word cat__word--back" style="--chars:3">ГЭР</span>
+          <h2 class="cat__name" style="--chars:4">
+            <span>ГЭР</span>
+            <span>АХУЙ</span>
+          </h2>
           <div class="cat__img"><img src="assets/product-clock.png" alt="Гэр ахуй"></div>
-          <span class="cat__word cat__word--front" style="--chars:4">АХУЙ</span>
         </article>
 
         <article class="cat" data-cat="1">
-          <span class="cat__word cat__word--back" style="--chars:3">ДУУ</span>
+          <h2 class="cat__name" style="--chars:6">
+            <span>ДУУ</span>
+            <span>ХӨГЖИМ</span>
+          </h2>
           <div class="cat__img"><img src="assets/product-turntable.png" alt="Дуу хөгжим"></div>
-          <span class="cat__word cat__word--front" style="--chars:6">ХӨГЖИМ</span>
         </article>
       </div>
 
-      <div class="cats__foot">
-        <div class="cats__dots">
-          <button class="dot is-active" data-cat="0" aria-label="Гэр ахуй"></button>
-          <button class="dot" data-cat="1" aria-label="Дуу хөгжим"></button>
+      <div class="cats__nav">
+        <div class="cats__arrows">
+          <button class="arrow" data-dir="-1" aria-label="Өмнөх категори">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="arrow" data-dir="1" aria-label="Дараагийн категори">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </div>
-        <a class="cats__enter" href="#detail">Барааг үзэх →</a>
+        <p class="cats__hint">Дараагийн категорийг сонгох бол<br>суман дээр дарна уу</p>
       </div>
 
     </div>
-  </section>
-
-  <!-- 3 · product detail -------------------------------------------------- -->
-  <section class="detail" id="detail">
-    <div class="detail__media">
-      <div class="layer is-active" data-variant="0"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
-      <div class="layer" data-variant="1"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
-      <div class="layer" data-variant="2"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
-    </div>
-
-    <div class="field">
-      <span class="field__label">өнгө</span>
-      <div class="bars">
-        <button class="bar is-active" data-variant="0" style="--c:#e8622c" aria-label="Улбар шар"></button>
-        <button class="bar" data-variant="1" style="--c:#5b8ad6" aria-label="Хөх"></button>
-        <button class="bar" data-variant="2" style="--c:#4d9b6a" aria-label="Ногоон"></button>
-      </div>
-    </div>
-
-    <div class="field">
-      <span class="field__label">хэмжээ</span>
-      <div class="sizes">
-        <button class="size">S</button>
-        <button class="size">M</button>
-        <button class="size is-active">L</button>
-        <button class="size">XL</button>
-      </div>
-    </div>
-
-    <div class="spec">
-      <div class="spec__head"><span>өргөн</span><span class="spec__val">14 см</span></div>
-      <input class="spec__range" type="range" min="0" max="100" value="46" aria-label="өргөн">
-    </div>
-
-    <div class="spec">
-      <div class="spec__head"><span>жин</span><span class="spec__val">420 гр</span></div>
-      <input class="spec__range" type="range" min="0" max="100" value="58" aria-label="жин">
-    </div>
-
-    <a class="order" href="#">ЗАХИАЛАХ</a>
-    <span class="price">89,900₮</span>
   </section>
 
 </main>
