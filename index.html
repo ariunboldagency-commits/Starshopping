@@ -10,12 +10,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+
+<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1673931670377637');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1673931670377637&ev=PageView&noscript=1"/></noscript>
 </head>
 <body>
 
 <!-- fixed chrome ------------------------------------------------------- -->
 <header class="topbar">
-  <a class="brand" href="#hero">
+  <a class="brand" href="#/">
     <img class="brand__mark" src="assets/logo-mark.png" alt="">
     <span class="brand__name">Starshopping</span>
   </a>
@@ -25,84 +38,74 @@
   </div>
 </header>
 
-<nav class="rail" aria-label="Хуудасны явц">
+<nav class="rail" id="rail" aria-label="Хуудасны явц">
   <button class="rail__line is-active" data-goto="hero" aria-label="Нүүр"></button>
   <button class="rail__line" data-goto="cats" aria-label="Категори"></button>
 </nav>
 
-<aside class="edge" aria-hidden="true">
+<aside class="edge" id="edge" aria-hidden="true">
   <span>ШИНЭ ЦУГЛУУЛГА 2026 · ШИНЭ ЦУГЛУУЛГА 2026</span>
 </aside>
 
 <main>
 
-  <!-- 1 · hero: type woven with the camera, scroll flies into the lens ---- -->
-  <section class="hero" id="hero">
-    <div class="hero__inner">
-      <span class="hero__word hero__word--back" style="--chars:4">STAR</span>
+  <!-- ============================ HOME ============================ -->
+  <div class="view" id="viewHome">
 
-      <div class="hero__cam">
-        <img src="assets/hero-camera.png" alt="Онцлох бүтээгдэхүүн — камер">
-      </div>
+    <!-- hero: type woven with the camera, scroll flies into the lens -->
+    <section class="hero" id="hero">
+      <div class="hero__inner">
+        <span class="hero__word hero__word--back" style="--chars:4">STAR</span>
 
-      <span class="hero__word hero__word--front" style="--chars:8">SHOPPING</span>
-
-      <div class="hero__veil"></div>
-    </div>
-
-    <span class="hero__cue">доош гүйлгэнэ үү</span>
-  </section>
-
-  <!-- 2 · categories emerge out of the darkness: name left, product right -->
-  <section class="cats" id="cats">
-    <div class="cats__emerge">
-
-      <span class="cats__eyebrow">КАТЕГОРИ · <span id="catIndex">01</span> / 02</span>
-
-      <div class="cats__stage">
-        <article class="cat is-active" data-cat="0">
-          <div class="cat__side">
-            <h2 class="cat__name" style="--chars:4">
-              <span>ГЭР</span>
-              <span>АХУЙ</span>
-            </h2>
-            <a class="cat__cta" href="#cats">
-              <span class="cat__count">12 бараа</span>
-              <span class="cat__go">Үзэх →</span>
-            </a>
-          </div>
-          <div class="cat__img"><img src="assets/product-clock.png" alt="Гэр ахуй"></div>
-        </article>
-
-        <article class="cat" data-cat="1">
-          <div class="cat__side">
-            <h2 class="cat__name" style="--chars:6">
-              <span>ДУУ</span>
-              <span>ХӨГЖИМ</span>
-            </h2>
-            <a class="cat__cta" href="#cats">
-              <span class="cat__count">8 бараа</span>
-              <span class="cat__go">Үзэх →</span>
-            </a>
-          </div>
-          <div class="cat__img"><img src="assets/product-turntable.png" alt="Дуу хөгжим"></div>
-        </article>
-      </div>
-
-      <div class="cats__nav">
-        <div class="cats__arrows">
-          <button class="arrow" data-dir="-1" aria-label="Өмнөх категори">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button class="arrow" data-dir="1" aria-label="Дараагийн категори">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
+        <div class="hero__cam">
+          <img src="assets/hero-camera.png" alt="Онцлох бүтээгдэхүүн — камер">
         </div>
-        <p class="cats__hint">Дараагийн категорийг сонгох бол<br>суман дээр дарна уу</p>
+
+        <span class="hero__word hero__word--front" style="--chars:8">SHOPPING</span>
+
+        <div class="hero__veil"></div>
       </div>
 
+      <span class="hero__cue">доош гүйлгэнэ үү</span>
+    </section>
+
+    <!-- categories emerge out of the darkness: name left, product right -->
+    <section class="cats" id="cats">
+      <div class="cats__emerge">
+        <span class="cats__eyebrow">КАТЕГОРИ · <span id="catIndex">01</span> / <span id="catTotal">01</span></span>
+
+        <div class="cats__stage" id="catsStage"></div>
+
+        <div class="cats__nav">
+          <div class="cats__arrows">
+            <button class="arrow" data-dir="-1" aria-label="Өмнөх категори">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="arrow" data-dir="1" aria-label="Дараагийн категори">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <p class="cats__hint">Дараагийн категорийг сонгох бол<br>суман дээр дарна уу</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ========================== CATEGORY ========================== -->
+  <div class="view" id="viewCategory" hidden>
+    <div class="page">
+      <a class="back" href="#/">← Нүүр</a>
+      <h1 class="page__title" id="catTitle"></h1>
+      <span class="page__meta" id="catMeta"></span>
+      <div class="plist" id="plist"></div>
     </div>
-  </section>
+  </div>
+
+  <!-- =========================== PRODUCT =========================== -->
+  <div class="view" id="viewProduct" hidden>
+    <div class="page" id="pdp"></div>
+  </div>
 
 </main>
 
