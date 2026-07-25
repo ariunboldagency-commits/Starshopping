@@ -10,6 +10,10 @@
      trimmed asset — the whole zoom transition pivots on this point */
   --lens-x: 52.1%;
   --lens-y: 87.5%;
+  /* hero camera size + placement; the offset puts the lens roughly where the
+     eye lands before the zoom takes over */
+  --cam-h: 104svh;
+  --cam-top: -11svh;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,12 +40,14 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.1rem;
+  padding: 1rem 1.1rem;
   pointer-events: none;
 }
 .topbar > * { pointer-events: auto; }
 
-.brand {
+.brand { display: flex; align-items: center; gap: 0.5rem; }
+.brand__mark { height: 22px; width: auto; }
+.brand__name {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 0.95rem;
@@ -79,48 +85,24 @@ a { color: inherit; text-decoration: none; }
 }
 .rail__line.is-active { width: 44px; opacity: 1; }
 
-/* right-hand vertical marquee pill */
+/* right-hand vertical marquee */
 .edge {
   position: fixed;
   right: 10px; top: 50%;
   transform: translateY(-50%);
   z-index: 55;
-  width: 42px;
-  height: 52vh;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 0 14px;
+  height: 48vh;
+  display: grid;
+  place-items: center;
   overflow: hidden;
   opacity: 0;
   transition: opacity 0.6s ease;
+  pointer-events: none;
 }
 .edge.is-shown { opacity: 1; }
-
-.edge__thumb {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-.edge__thumb img { width: 150%; max-width: none; }
-
-.edge__text {
-  flex: 1;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  width: 100%;
-}
-.edge__text span {
+.edge span {
   writing-mode: vertical-rl;
-  font-size: 0.5rem;
+  font-size: 0.52rem;
   letter-spacing: 0.28em;
   color: var(--fg-dim);
   white-space: nowrap;
@@ -139,12 +121,7 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 
-.hero__inner {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-}
+.hero__inner { position: absolute; inset: 0; }
 
 /* Each word is sized from its own length so any word fills the width without
    overflowing. The cap keeps the type from overpowering the product. */
@@ -157,22 +134,28 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.01em;
   white-space: nowrap;
   color: var(--fg);
-  font-size: min(18vw, calc(88vw / (var(--chars) * 0.72)));
+  font-size: min(16vw, calc(86vw / (var(--chars) * 0.72)));
   transform: translateX(-50%);
 }
-.hero__word--back  { z-index: 1; top: 42%; }
-.hero__word--front { z-index: 3; top: 60%; }
+.hero__word--back  { z-index: 1; top: 40%; }
+.hero__word--front { z-index: 3; top: 59%; }
 
+/* wrapper only positions; the <img> owns the transform so GSAP can drive it
+   without fighting a centring translate */
 .hero__cam {
   position: absolute;
+  left: 0; right: 0;
+  top: var(--cam-top);
   z-index: 2;
-  height: 94svh;
-  transform-origin: var(--lens-x) var(--lens-y);
-  will-change: transform;
+  display: flex;
+  justify-content: center;
 }
 .hero__cam img {
-  height: 100%;
+  height: var(--cam-h);
   width: auto;
+  max-width: none;
+  transform-origin: var(--lens-x) var(--lens-y);
+  will-change: transform;
   filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.7));
 }
 
@@ -214,14 +197,15 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.4rem;
+  gap: 1.2rem;
   will-change: transform, opacity;
 }
 
 .cats__eyebrow {
-  font-size: 0.58rem;
-  letter-spacing: 0.28em;
-  color: var(--fg-dim);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  color: var(--fg);
 }
 
 .cats__stage {
@@ -243,8 +227,15 @@ a { color: inherit; text-decoration: none; }
 }
 .cat.is-active { opacity: 1; pointer-events: auto; }
 
+.cat__side {
+  flex: 0 0 47%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
 .cat__name {
-  flex: 0 0 46%;
   display: flex;
   flex-direction: column;
   font-family: var(--font-display);
@@ -255,8 +246,27 @@ a { color: inherit; text-decoration: none; }
   font-size: min(13vw, calc(46vw / (var(--chars) * 0.72)));
 }
 
+/* the step that tells people there is something behind the category */
+.cat__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--fg);
+  color: #000;
+  border-radius: 999px;
+  padding: 0.62rem 1.05rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+}
+.cat__cta:active { transform: scale(0.97); }
+.cat__count { opacity: 0.55; }
+.cat__go { white-space: nowrap; }
+
 .cat__img {
-  flex: 1 1 54%;
+  flex: 1 1 53%;
   display: grid;
   place-items: center;
   height: 100%;
@@ -272,53 +282,59 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.85rem;
 }
 
 .cats__arrows { display: flex; gap: 1.6rem; }
 
 .arrow {
-  width: 54px; height: 54px;
+  width: 58px; height: 58px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
   display: grid;
   place-items: center;
   color: var(--fg);
   transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
 }
-.arrow svg { width: 24px; height: 24px; }
+.arrow svg { width: 26px; height: 26px; }
 .arrow:hover { background: var(--fg); color: #000; }
 .arrow:active { transform: scale(0.94); }
 
 .cats__hint {
   text-align: center;
-  font-size: 0.85rem;
+  font-weight: 700;
+  font-size: 0.95rem;
   line-height: 1.45;
-  color: var(--fg-dim);
+  color: var(--fg);
 }
 
 /* ============================== desktop ============================== */
 @media (min-width: 860px) {
-  .topbar { padding: 1.5rem 2.4rem; }
-  .brand { font-size: 1.05rem; }
+  :root { --cam-h: 116svh; --cam-top: -24svh; }
+
+  .topbar { padding: 1.4rem 2.4rem; }
+  .brand__mark { height: 26px; }
+  .brand__name { font-size: 1.05rem; }
   .rail { left: 30px; gap: 12px; }
   .rail__line { width: 22px; height: 3px; }
   .rail__line.is-active { width: 64px; }
-  .edge { right: 24px; width: 48px; }
+  .edge { right: 24px; }
 
-  .hero__word { font-size: min(10vw, calc(72vw / (var(--chars) * 0.72))); }
-  .hero__word--back  { top: 36%; }
-  .hero__word--front { top: 57%; }
-  .hero__cam { height: 96svh; }
+  .hero__word { font-size: min(8.5vw, calc(70vw / (var(--chars) * 0.72))); }
+  .hero__word--back  { top: 34%; }
+  .hero__word--front { top: 56%; }
 
   .cats { padding: 6rem 3rem 3rem; }
+  .cats__eyebrow { font-size: 0.88rem; }
   .cats__stage { height: 58svh; }
   .cat { gap: 2rem; }
-  .cat__name { flex-basis: 42%; font-size: min(7.5vw, calc(38vw / (var(--chars) * 0.72))); }
-  .cat__img { flex-basis: 58%; }
-  .arrow { width: 66px; height: 66px; }
-  .arrow svg { width: 28px; height: 28px; }
-  .cats__hint { font-size: 0.95rem; }
+  .cat__side { flex-basis: 44%; gap: 1.4rem; }
+  .cat__name { font-size: min(7.5vw, calc(38vw / (var(--chars) * 0.72))); }
+  .cat__cta { font-size: 0.92rem; padding: 0.8rem 1.4rem; }
+  .cat__img { flex-basis: 56%; }
+  .arrow { width: 70px; height: 70px; }
+  .arrow svg { width: 30px; height: 30px; }
+  .cats__hint { font-size: 1.1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

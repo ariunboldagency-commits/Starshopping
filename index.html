@@ -5,16 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Starshopping</title>
+<link rel="icon" href="assets/logo-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- fixed chrome ------------------------------------------------------- -->
 <header class="topbar">
-  <a class="brand" href="#hero">Starshopping</a>
+  <a class="brand" href="#hero">
+    <img class="brand__mark" src="assets/logo-mark.png" alt="">
+    <span class="brand__name">Starshopping</span>
+  </a>
   <div class="topbar__icons">
     <button class="icon-btn" aria-label="Хайх">⌕</button>
     <button class="icon-btn" aria-label="Бүртгэл">◍</button>
@@ -27,13 +31,12 @@
 </nav>
 
 <aside class="edge" aria-hidden="true">
-  <div class="edge__thumb"><img src="assets/hero-camera.png" alt=""></div>
-  <div class="edge__text"><span>ШИНЭ ЦУГЛУУЛГА 2026 · ШИНЭ ЦУГЛУУЛГА 2026</span></div>
+  <span>ШИНЭ ЦУГЛУУЛГА 2026 · ШИНЭ ЦУГЛУУЛГА 2026</span>
 </aside>
 
 <main>
 
-  <!-- 1 · hero: type woven with the camera, scroll zooms into the lens ---- -->
+  <!-- 1 · hero: type woven with the camera, scroll flies into the lens ---- -->
   <section class="hero" id="hero">
     <div class="hero__inner">
       <span class="hero__word hero__word--back" style="--chars:4">STAR</span>
@@ -58,18 +61,30 @@
 
       <div class="cats__stage">
         <article class="cat is-active" data-cat="0">
-          <h2 class="cat__name" style="--chars:4">
-            <span>ГЭР</span>
-            <span>АХУЙ</span>
-          </h2>
+          <div class="cat__side">
+            <h2 class="cat__name" style="--chars:4">
+              <span>ГЭР</span>
+              <span>АХУЙ</span>
+            </h2>
+            <a class="cat__cta" href="#cats">
+              <span class="cat__count">12 бараа</span>
+              <span class="cat__go">Үзэх →</span>
+            </a>
+          </div>
           <div class="cat__img"><img src="assets/product-clock.png" alt="Гэр ахуй"></div>
         </article>
 
         <article class="cat" data-cat="1">
-          <h2 class="cat__name" style="--chars:6">
-            <span>ДУУ</span>
-            <span>ХӨГЖИМ</span>
-          </h2>
+          <div class="cat__side">
+            <h2 class="cat__name" style="--chars:6">
+              <span>ДУУ</span>
+              <span>ХӨГЖИМ</span>
+            </h2>
+            <a class="cat__cta" href="#cats">
+              <span class="cat__count">8 бараа</span>
+              <span class="cat__go">Үзэх →</span>
+            </a>
+          </div>
           <div class="cat__img"><img src="assets/product-turntable.png" alt="Дуу хөгжим"></div>
         </article>
       </div>
@@ -77,10 +92,10 @@
       <div class="cats__nav">
         <div class="cats__arrows">
           <button class="arrow" data-dir="-1" aria-label="Өмнөх категори">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <button class="arrow" data-dir="1" aria-label="Дараагийн категори">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
         <p class="cats__hint">Дараагийн категорийг сонгох бол<br>суман дээр дарна уу</p>

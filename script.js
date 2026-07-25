@@ -1,12 +1,27 @@
 gsap.registerPlugin(ScrollTrigger);
 
 /* ========================================================================
-   1 · HERO — scrolling drives the camera toward the viewer until we are
-   inside the lens. The image pivots on the lens centre (set in CSS as
-   --lens-x/--lens-y) so that one point stays put while everything else
-   expands past the edges of the screen. The veil closes the last of the
-   gap so the section hands off as unbroken black.
+   1 · HERO — scrolling flies the viewer into the camera lens.
+
+   Two things have to happen together. The image scales about the lens
+   (transform-origin, set in CSS), and the lens itself travels to the middle
+   of the screen — otherwise the zoom races off toward wherever the lens
+   happened to sit, which reads as drifting past the subject rather than
+   entering it. Because the origin sits on the lens, the lens ends up exactly
+   at origin + translation regardless of scale, so the offsets below are just
+   the gap between the lens and the centre of the hero.
    ===================================================================== */
+const heroEl = document.getElementById("hero");
+const camImg = document.querySelector(".hero__cam img");
+
+const lensOffset = (axis) => () => {
+  const hero = heroEl.getBoundingClientRect();
+  const img = camImg.getBoundingClientRect();
+  const lensX = img.left - hero.left + img.width * 0.521;
+  const lensY = img.top - hero.top + img.height * 0.875;
+  return axis === "x" ? hero.width / 2 - lensX : hero.height / 2 - lensY;
+};
+
 gsap
   .timeline({
     scrollTrigger: {
@@ -16,11 +31,22 @@ gsap
       scrub: 0.5,
       pin: true,
       anticipatePin: 1,
+      invalidateOnRefresh: true, // re-measure the lens after a resize
     },
   })
   .to(".hero__cue", { opacity: 0, duration: 0.12 }, 0)
   .to(".hero__word", { opacity: 0, duration: 0.34, ease: "power1.in" }, 0.04)
-  .to(".hero__cam", { scale: 10, duration: 1, ease: "power2.in" }, 0)
+  .to(
+    camImg,
+    {
+      scale: 11,
+      x: lensOffset("x"),
+      y: lensOffset("y"),
+      duration: 1,
+      ease: "power2.in",
+    },
+    0
+  )
   .to(".hero__veil", { opacity: 1, duration: 0.3 }, 0.7);
 
 /* ========================================================================
@@ -87,7 +113,7 @@ const edge = document.querySelector(".edge");
 
 const setSection = (id) => {
   railLines.forEach((l) => l.classList.toggle("is-active", l.dataset.goto === id));
-  edge.classList.toggle("is-shown", true);
+  edge.classList.add("is-shown");
 };
 
 ["hero", "cats"].forEach((id) => {
