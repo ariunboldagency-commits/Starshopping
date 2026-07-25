@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b060e">
+<meta name="theme-color" content="#000000">
 <title>Starshopping</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,148 +12,121 @@
 </head>
 <body>
 
-<div class="demo-flag">ПРОТОТИП · зураг, бараа, категори бүгд түр placeholder</div>
-
 <!-- fixed chrome ------------------------------------------------------- -->
 <header class="topbar">
-  <a class="brand" href="#c1">
-    <span class="brand__star">Star</span><span class="brand__shopping">shopping</span>
-  </a>
-  <button class="topbar__menu" aria-label="Цэс">☰</button>
+  <a class="brand" href="#hero">Starshopping</a>
+  <div class="topbar__icons">
+    <button class="icon-btn" aria-label="Хайх">⌕</button>
+    <button class="icon-btn" aria-label="Бүртгэл">◍</button>
+  </div>
 </header>
 
-<nav class="progress" aria-label="Хуудасны явц">
-  <button class="progress__line is-active" data-goto="c1" aria-label="1-р хэсэг"></button>
-  <button class="progress__line" data-goto="c2" aria-label="2-р хэсэг"></button>
-  <button class="progress__line" data-goto="c3" aria-label="3-р хэсэг"></button>
-  <button class="progress__line" data-goto="c4" aria-label="4-р хэсэг"></button>
-  <button class="progress__line" data-goto="c5" aria-label="5-р хэсэг"></button>
+<nav class="rail" aria-label="Хуудасны явц">
+  <button class="rail__line is-active" data-goto="hero" aria-label="Нүүр"></button>
+  <button class="rail__line" data-goto="cats" aria-label="Категори"></button>
+  <button class="rail__line" data-goto="detail" aria-label="Бүтээгдэхүүн"></button>
 </nav>
 
-<div class="corner">
-  <div class="corner__thumb"><img src="assets/product-camera.png" alt=""></div>
-  <div class="corner__meta">
-    <span class="corner__label">Онцлох</span>
-    <span class="corner__value">Фото аппарат</span>
-  </div>
-</div>
+<aside class="edge" aria-hidden="true">
+  <div class="edge__thumb"><img src="assets/hero-camera.png" alt=""></div>
+  <div class="edge__text"><span>ШИНЭ ЦУГЛУУЛГА 2026 · ШИНЭ ЦУГЛУУЛГА 2026</span></div>
+</aside>
 
-<!-- chapters ----------------------------------------------------------- -->
-<main class="chapters">
+<main>
 
-  <!-- 1 · hero -->
-  <section class="chapter" id="c1">
-    <div class="ticker" aria-hidden="true">
-      <div class="ticker__row">
-        <span>ШИНЭ ЦУГЛУУЛГА 2026</span><span>·</span><span>ҮНЭГҮЙ ХҮРГЭЛТ</span><span>·</span>
-        <span>ШИНЭ ЦУГЛУУЛГА 2026</span><span>·</span><span>ҮНЭГҮЙ ХҮРГЭЛТ</span><span>·</span>
-        <span>ШИНЭ ЦУГЛУУЛГА 2026</span><span>·</span><span>ҮНЭГҮЙ ХҮРГЭЛТ</span><span>·</span>
+  <!-- 1 · hero: type woven with the camera, scroll zooms into the lens ---- -->
+  <section class="hero" id="hero">
+    <div class="hero__inner">
+      <span class="hero__word hero__word--back" style="--chars:4">STAR</span>
+
+      <div class="hero__cam">
+        <img src="assets/hero-camera.png" alt="Онцлох бүтээгдэхүүн — камер">
+      </div>
+
+      <span class="hero__word hero__word--front" style="--chars:8">SHOPPING</span>
+
+      <div class="hero__veil"></div>
+    </div>
+
+    <span class="hero__cue">доош гүйлгэнэ үү</span>
+  </section>
+
+  <!-- 2 · categories emerge out of the darkness, and swap one by one ------ -->
+  <section class="cats" id="cats">
+    <div class="cats__emerge">
+
+      <span class="cats__eyebrow">КАТЕГОРИ</span>
+
+      <div class="cats__stage">
+        <article class="cat is-active" data-cat="0">
+          <span class="cat__word cat__word--back" style="--chars:3">ГЭР</span>
+          <div class="cat__img"><img src="assets/product-clock.png" alt="Гэр ахуй"></div>
+          <span class="cat__word cat__word--front" style="--chars:4">АХУЙ</span>
+        </article>
+
+        <article class="cat" data-cat="1">
+          <span class="cat__word cat__word--back" style="--chars:3">ДУУ</span>
+          <div class="cat__img"><img src="assets/product-turntable.png" alt="Дуу хөгжим"></div>
+          <span class="cat__word cat__word--front" style="--chars:6">ХӨГЖИМ</span>
+        </article>
+      </div>
+
+      <div class="cats__foot">
+        <div class="cats__dots">
+          <button class="dot is-active" data-cat="0" aria-label="Гэр ахуй"></button>
+          <button class="dot" data-cat="1" aria-label="Дуу хөгжим"></button>
+        </div>
+        <a class="cats__enter" href="#detail">Барааг үзэх →</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3 · product detail -------------------------------------------------- -->
+  <section class="detail" id="detail">
+    <div class="detail__media">
+      <div class="layer is-active" data-variant="0"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
+      <div class="layer" data-variant="1"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
+      <div class="layer" data-variant="2"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">өнгө</span>
+      <div class="bars">
+        <button class="bar is-active" data-variant="0" style="--c:#e8622c" aria-label="Улбар шар"></button>
+        <button class="bar" data-variant="1" style="--c:#5b8ad6" aria-label="Хөх"></button>
+        <button class="bar" data-variant="2" style="--c:#4d9b6a" aria-label="Ногоон"></button>
       </div>
     </div>
 
-    <div class="stack">
-      <span class="stack__word stack__word--back" style="--chars:4">STAR</span>
-      <div class="stack__img"><img src="assets/product-camera.png" alt="Онцлох бүтээгдэхүүн"></div>
-      <span class="stack__word stack__word--front" style="--chars:8">SHOPPING</span>
-    </div>
-
-    <div class="chapter__foot">
-      <span class="chapter__hint">Доош гүйлгэнэ үү</span>
-      <span class="chapter__rule"></span>
-    </div>
-  </section>
-
-  <!-- 2 · category -->
-  <section class="chapter" id="c2">
-    <span class="chapter__index">01 — КАТЕГОРИ</span>
-    <div class="stack">
-      <span class="stack__word stack__word--back" style="--chars:3">ГЭР</span>
-      <div class="stack__img"><img src="assets/product-clock.png" alt="Гэр ахуйн бүтээгдэхүүн"></div>
-      <span class="stack__word stack__word--front" style="--chars:4">АХУЙ</span>
-    </div>
-    <div class="chapter__foot">
-      <span class="chapter__hint">12 бараа</span>
-      <a class="chapter__link" href="#c5">Үзэх →</a>
-    </div>
-  </section>
-
-  <!-- 3 · category -->
-  <section class="chapter" id="c3">
-    <span class="chapter__index">02 — КАТЕГОРИ</span>
-    <div class="stack">
-      <span class="stack__word stack__word--back" style="--chars:3">ДУУ</span>
-      <div class="stack__img"><img src="assets/product-turntable.png" alt="Дуу хөгжмийн бүтээгдэхүүн"></div>
-      <span class="stack__word stack__word--front" style="--chars:6">ХӨГЖИМ</span>
-    </div>
-    <div class="chapter__foot">
-      <span class="chapter__hint">8 бараа</span>
-      <a class="chapter__link" href="#c5">Үзэх →</a>
-    </div>
-  </section>
-
-  <!-- 4 · category -->
-  <section class="chapter" id="c4">
-    <span class="chapter__index">03 — КАТЕГОРИ</span>
-    <div class="stack">
-      <span class="stack__word stack__word--back" style="--chars:5">ГЭРЭЛ</span>
-      <div class="stack__img"><img src="assets/product-lamp.png" alt="Гэрэлтүүлгийн бүтээгдэхүүн"></div>
-      <span class="stack__word stack__word--front" style="--chars:5">ГЭГЭЭ</span>
-    </div>
-    <div class="chapter__foot">
-      <span class="chapter__hint">15 бараа</span>
-      <a class="chapter__link" href="#c5">Үзэх →</a>
-    </div>
-  </section>
-
-  <!-- 5 · product detail -->
-  <section class="chapter chapter--detail" id="c5">
-    <div class="detail">
-      <div class="detail__visual">
-        <div class="layers" id="layers">
-          <div class="layer is-active" data-variant="0"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
-          <div class="layer" data-variant="1"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
-          <div class="layer" data-variant="2"><img src="assets/product-camera.png" alt="Бүтээгдэхүүн"></div>
-        </div>
-      </div>
-
-      <div class="detail__info">
-        <span class="detail__eyebrow">ОНЦГОЙ ХУВИЛБАР · 2026</span>
-        <h2 class="detail__name">Фото аппарат</h2>
-
-        <div class="detail__group">
-          <span class="detail__label">өнгө</span>
-          <div class="swatches" id="swatches">
-            <button class="swatch is-active" data-variant="0" style="--sw:#e8622c" aria-label="Улбар шар"></button>
-            <button class="swatch" data-variant="1" style="--sw:#4f7fd4" aria-label="Хөх"></button>
-            <button class="swatch" data-variant="2" style="--sw:#3f8f63" aria-label="Ногоон"></button>
-          </div>
-        </div>
-
-        <div class="detail__group">
-          <span class="detail__label">хэмжээ</span>
-          <div class="sizes" id="sizes">
-            <button class="size">S</button>
-            <button class="size is-active">M</button>
-            <button class="size">L</button>
-            <button class="size">XL</button>
-          </div>
-        </div>
-
-        <dl class="specs">
-          <div><dt>жин</dt><dd>420 гр</dd></div>
-          <div><dt>хэмжээс</dt><dd>14 × 10 см</dd></div>
-        </dl>
-
-        <div class="detail__buy">
-          <span class="detail__price">89,900₮</span>
-          <a class="detail__cta" href="#">Захиалах</a>
-        </div>
+    <div class="field">
+      <span class="field__label">хэмжээ</span>
+      <div class="sizes">
+        <button class="size">S</button>
+        <button class="size">M</button>
+        <button class="size is-active">L</button>
+        <button class="size">XL</button>
       </div>
     </div>
+
+    <div class="spec">
+      <div class="spec__head"><span>өргөн</span><span class="spec__val">14 см</span></div>
+      <input class="spec__range" type="range" min="0" max="100" value="46" aria-label="өргөн">
+    </div>
+
+    <div class="spec">
+      <div class="spec__head"><span>жин</span><span class="spec__val">420 гр</span></div>
+      <input class="spec__range" type="range" min="0" max="100" value="58" aria-label="жин">
+    </div>
+
+    <a class="order" href="#">ЗАХИАЛАХ</a>
+    <span class="price">89,900₮</span>
   </section>
 
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

@@ -1,58 +1,128 @@
-/* Chaptered scroll experience — no animation library needed.
-   Scroll snapping is CSS; this file only tracks which chapter is on screen
-   and drives the small pieces of state that follow from it. */
+gsap.registerPlugin(ScrollTrigger);
 
-const chapters = Array.from(document.querySelectorAll(".chapter"));
-const lines = Array.from(document.querySelectorAll(".progress__line"));
-const corner = document.querySelector(".corner");
+/* ========================================================================
+   1 · HERO — scrolling drives the camera toward the viewer until we are
+   inside the lens. The image pivots on the lens centre (set in CSS as
+   --lens-x/--lens-y) so that one point stays put while everything else
+   expands past the edges of the screen. The veil closes the last of the
+   gap so the section hands off as unbroken black.
+   ===================================================================== */
+gsap
+  .timeline({
+    scrollTrigger: {
+      trigger: "#hero",
+      start: "top top",
+      end: "+=190%",
+      scrub: 0.5,
+      pin: true,
+      anticipatePin: 1,
+    },
+  })
+  .to(".hero__cue", { opacity: 0, duration: 0.12 }, 0)
+  .to(".hero__word", { opacity: 0, duration: 0.34, ease: "power1.in" }, 0.04)
+  .to(".hero__cam", { scale: 10, duration: 1, ease: "power2.in" }, 0)
+  .to(".hero__veil", { opacity: 1, duration: 0.3 }, 0.7);
 
-/* ---- active chapter → entrance animations, progress rail, corner mark ---- */
-const setActive = (id) => {
-  chapters.forEach((c) => c.classList.toggle("is-active", c.id === id));
-  lines.forEach((l) => l.classList.toggle("is-active", l.dataset.goto === id));
-  // the corner mark is noise on the hero, useful everywhere after it
-  corner.classList.toggle("is-shown", id !== "c1");
-};
-
-const observer = new IntersectionObserver(
-  (entries) => {
-    // the most-visible chapter wins, so fast scrolls don't leave a stale state
-    const visible = entries
-      .filter((e) => e.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (visible) setActive(visible.target.id);
-  },
-  { threshold: [0.35, 0.6, 0.9] }
+/* ========================================================================
+   2 · CATEGORIES — the next screen grows back out of that darkness.
+   ===================================================================== */
+gsap.fromTo(
+  ".cats__emerge",
+  { scale: 0.3, opacity: 0 },
+  {
+    scale: 1,
+    opacity: 1,
+    ease: "power2.out",
+    scrollTrigger: {
+      trigger: "#cats",
+      start: "top 92%",
+      end: "top 12%",
+      scrub: 0.5,
+    },
+  }
 );
 
-chapters.forEach((c) => observer.observe(c));
-setActive("c1");
+/* ---- the two categories trade places, the way the reference cycles its
+   colourways. Auto-advance pauses while the section is off screen. ---- */
+const cards = Array.from(document.querySelectorAll(".cat"));
+const dots = Array.from(document.querySelectorAll(".dot"));
+let current = 0;
+let timer = null;
 
-/* ---- progress rail doubles as navigation ---- */
-lines.forEach((line) => {
-  line.addEventListener("click", () => {
-    document.getElementById(line.dataset.goto)?.scrollIntoView({ behavior: "smooth" });
-  });
+const showCat = (i) => {
+  current = i;
+  cards.forEach((c, n) => c.classList.toggle("is-active", n === i));
+  dots.forEach((d, n) => d.classList.toggle("is-active", n === i));
+};
+
+const startCycle = () => {
+  stopCycle();
+  timer = setInterval(() => showCat((current + 1) % cards.length), 3800);
+};
+const stopCycle = () => {
+  if (timer) clearInterval(timer);
+  timer = null;
+};
+
+dots.forEach((dot) =>
+  dot.addEventListener("click", () => {
+    showCat(Number(dot.dataset.cat));
+    startCycle(); // restart the clock so a manual pick gets its full turn
+  })
+);
+
+ScrollTrigger.create({
+  trigger: "#cats",
+  start: "top 80%",
+  end: "bottom 20%",
+  onToggle: (self) => (self.isActive ? startCycle() : stopCycle()),
 });
 
-/* ---- colour swatches cross-fade the stacked product layers ----
-   Layers are placeholders today; each will become a real per-colour photo
-   pulled from the product sheet. */
-const swatches = document.querySelectorAll(".swatch");
+/* ========================================================================
+   3 · chrome that follows the active section
+   ===================================================================== */
+const railLines = Array.from(document.querySelectorAll(".rail__line"));
+const edge = document.querySelector(".edge");
+
+const setSection = (id) => {
+  railLines.forEach((l) => l.classList.toggle("is-active", l.dataset.goto === id));
+  edge.classList.toggle("is-shown", id !== "detail");
+};
+
+["hero", "cats", "detail"].forEach((id) => {
+  ScrollTrigger.create({
+    trigger: `#${id}`,
+    start: "top 55%",
+    end: "bottom 45%",
+    onEnter: () => setSection(id),
+    onEnterBack: () => setSection(id),
+  });
+});
+setSection("hero");
+
+railLines.forEach((line) =>
+  line.addEventListener("click", () =>
+    document.getElementById(line.dataset.goto)?.scrollIntoView({ behavior: "smooth" })
+  )
+);
+
+/* ========================================================================
+   4 · product options
+   ===================================================================== */
+const bars = document.querySelectorAll(".bar");
 const layers = document.querySelectorAll(".layer");
 
-swatches.forEach((swatch) => {
-  swatch.addEventListener("click", () => {
-    const variant = swatch.dataset.variant;
-    swatches.forEach((s) => s.classList.toggle("is-active", s === swatch));
-    layers.forEach((l) => l.classList.toggle("is-active", l.dataset.variant === variant));
-  });
-});
+bars.forEach((bar) =>
+  bar.addEventListener("click", () => {
+    const v = bar.dataset.variant;
+    bars.forEach((b) => b.classList.toggle("is-active", b === bar));
+    layers.forEach((l) => l.classList.toggle("is-active", l.dataset.variant === v));
+  })
+);
 
-/* ---- size selection ---- */
 const sizes = document.querySelectorAll(".size");
-sizes.forEach((size) => {
+sizes.forEach((size) =>
   size.addEventListener("click", () => {
     sizes.forEach((s) => s.classList.toggle("is-active", s === size));
-  });
-});
+  })
+);
