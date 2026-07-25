@@ -13,7 +13,7 @@
 <body>
 
 <div class="demo-banner">
-  ЭНЭ БОЛ ЗӨВХӨН ХӨДӨЛГӨӨНИЙ ПРОТОТИП (v4) — зураг/категори бүгд placeholder
+  ЭНЭ БОЛ ЗӨВХӨН ХӨДӨЛГӨӨНИЙ ПРОТОТИП (v5) — зураг/категори бүгд placeholder
 </div>
 
 <div class="scroll-stage" id="scrollStage">
@@ -34,9 +34,10 @@
     </div>
 
     <div class="hero__stage" id="heroStage">
-      <img src="assets/product-clock.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--1">
-      <img src="assets/product-camera.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--2">
-      <img src="assets/product-lamp.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--4">
+      <img src="assets/product-clock.png" alt="Жишээ бүтээгдэхүүн" class="product product--clock">
+      <img src="assets/product-camera.png" alt="Жишээ бүтээгдэхүүн" class="product product--camera">
+      <img src="assets/product-lamp.png" alt="Жишээ бүтээгдэхүүн" class="product product--lamp">
+      <img src="assets/product-turntable.png" alt="Жишээ бүтээгдэхүүн" class="product product--turntable" id="driftProduct">
     </div>
 
     <div class="hero__copy">
@@ -49,10 +50,10 @@
     </div>
   </section>
 
-  <img src="assets/product-turntable.png" alt="Жишээ бүтээгдэхүүн" class="drift-product" id="driftProduct">
-
   <section class="next-section" id="categories">
-    <div class="next-section__zone next-section__zone--drift" aria-hidden="true"></div>
+    <div class="next-section__zone next-section__zone--drift">
+      <div class="drift-target" id="driftTarget" aria-hidden="true"></div>
+    </div>
     <div class="next-section__zone next-section__zone--content">
       <span class="next-section__eyebrow">Категори · демо</span>
       <h2 class="next-section__title">Цаашид энд категорийн жагсаалт орно</h2>

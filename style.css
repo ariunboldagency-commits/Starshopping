@@ -37,9 +37,7 @@ body {
 }
 
 /* ---------- shared scroll stage (hero + categories share one atmosphere) ---------- */
-.scroll-stage {
-  position: relative;
-}
+.scroll-stage { position: relative; }
 
 .atmosphere {
   position: absolute;
@@ -56,9 +54,10 @@ body {
 }
 
 /* ---------- hero ---------- */
+/* z-index 2 keeps the drifting product painting above the categories section */
 .hero {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -118,32 +117,59 @@ body {
   padding: 0.32rem 0.7rem;
 }
 
-/* product stage */
+/* ---------- product composition ----------
+   Every source PNG is trimmed to its alpha bounds, so a width set here maps
+   1:1 to how large the object actually reads. Widths are tuned against each
+   image's true aspect ratio (clock 1.63, camera 1.28, turntable 1.30,
+   lamp 0.66) so their rendered heights form a deliberate hierarchy, and all
+   four sit on a shared baseline via `bottom`.                              */
 .hero__stage {
   position: relative;
   z-index: 2;
   flex: 1;
-  min-height: 340px;
+  min-height: 320px;
   margin-top: 1rem;
 }
 
-.hero__product,
-.drift-product {
+.product {
   position: absolute;
   height: auto;
-  filter: drop-shadow(0 20px 26px rgba(36, 31, 24, 0.22));
-  will-change: transform, opacity;
+  will-change: transform;
 }
 
-.hero__product--1 { width: 40%; top: 0%;  left: -6%; z-index: 2; }
-.hero__product--2 { width: 52%; top: 10%; left: 20%; z-index: 3; }
-.hero__product--4 { width: 36%; top: 4%;  left: 68%; z-index: 1; }
+/* back of the cluster — lighter shadow, sits highest on the baseline */
+.product--clock {
+  width: clamp(110px, 30vw, 230px);
+  left: -4%;
+  bottom: 34%;
+  z-index: 1;
+  filter: drop-shadow(0 14px 18px rgba(36, 31, 24, 0.16));
+}
 
-.drift-product {
+.product--lamp {
+  width: clamp(78px, 21vw, 160px);
+  left: 76%;
+  bottom: 26%;
+  z-index: 2;
+  filter: drop-shadow(0 16px 20px rgba(36, 31, 24, 0.18));
+}
+
+.product--camera {
+  width: clamp(120px, 33vw, 250px);
+  left: 20%;
+  bottom: 18%;
+  z-index: 3;
+  filter: drop-shadow(0 20px 26px rgba(36, 31, 24, 0.22));
+}
+
+/* front of the cluster — largest, lowest, strongest shadow; this is the
+   object that drifts down into the category section on scroll */
+.product--turntable {
+  width: clamp(150px, 42vw, 320px);
+  left: 42%;
+  bottom: 4%;
   z-index: 4;
-  width: 58%;
-  top: 24%;
-  left: 32%;
+  filter: drop-shadow(0 26px 32px rgba(36, 31, 24, 0.26));
 }
 
 .hero__copy {
@@ -182,7 +208,7 @@ body {
   box-shadow: 0 10px 24px rgba(143, 108, 38, 0.35);
 }
 
-/* ---------- next section (scroll target) ---------- */
+/* ---------- categories: left 30% receives the drifting product ---------- */
 .next-section {
   position: relative;
   z-index: 1;
@@ -196,7 +222,17 @@ body {
 .next-section__zone--drift {
   flex: 0 0 30%;
   max-width: 30%;
-  height: 1px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* invisible landing box — the drift animation measures this element and
+   moves the product to its centre, so the landing stays correct at any size */
+.drift-target {
+  width: 100%;
+  height: clamp(120px, 26vw, 240px);
 }
 
 .next-section__zone--content {
@@ -222,6 +258,8 @@ body {
 
 /* ---------- footer ---------- */
 .site-footer {
+  position: relative;
+  z-index: 3;
   padding: 3rem 1.5rem 2.5rem;
   text-align: center;
   background: var(--ink);
@@ -239,15 +277,21 @@ body {
 .site-footer__contact a { color: var(--gold-1); text-decoration: none; }
 .site-footer__note { font-size: 0.72rem; color: #a89e8c; }
 
-/* ---------- desktop ---------- */
+/* ---------- desktop: same size logic, cluster spreads into a row ---------- */
 @media (min-width: 860px) {
   .hero { padding: 2rem 3.5rem 3rem; }
   .hero__badges span { font-size: 0.72rem; padding: 0.4rem 0.9rem; }
-  .hero__stage { min-height: 460px; }
-  .hero__product--1 { width: 20%; top: 2%;  left: -2%; }
-  .hero__product--2 { width: 27%; top: 12%; left: 20%; }
-  .hero__product--4 { width: 18%; top: 6%;  left: 74%; }
-  .drift-product { width: 30%; top: 26%; left: 44%; }
+  .hero__stage { min-height: 420px; }
+
+  .product--clock     { left: 4%;  bottom: 34%; }
+  .product--camera    { left: 24%; bottom: 18%; }
+  .product--turntable { left: 46%; bottom: 6%; }
+  .product--lamp      { left: 74%; bottom: 26%; }
+
   .hero__copy { max-width: 480px; }
   .next-section { padding: 4rem 3.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
