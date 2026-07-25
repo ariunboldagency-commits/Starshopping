@@ -7,56 +7,62 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="demo-banner">
-  ЭНЭ БОЛ ЗӨВХӨН ХӨДӨЛГӨӨНИЙ ПРОТОТИП (v3) — 4 бүтээгдэхүүнтэй, зураг/категори бүгд placeholder
+  ЭНЭ БОЛ ЗӨВХӨН ХӨДӨЛГӨӨНИЙ ПРОТОТИП (v4) — зураг/категори бүгд placeholder
 </div>
 
-<section class="hero" id="hero">
-  <div class="hero__glow" aria-hidden="true"></div>
+<div class="scroll-stage" id="scrollStage">
+  <div class="atmosphere" aria-hidden="true"></div>
 
-  <nav class="hero__nav">
-    <div class="logo-mark">
-      <span class="logo-mark__text">STARSHOPPING</span>
+  <section class="hero" id="hero">
+    <nav class="hero__nav">
+      <div class="logo-mark">
+        <span class="logo-mark__text"><span class="logo-mark__star">Star</span><span class="logo-mark__shopping">shopping</span></span>
+      </div>
+      <button class="hero__menu-btn" aria-label="Цэс">☰</button>
+    </nav>
+
+    <div class="hero__badges">
+      <span>Үнэгүй хүргэлт 6,000₮-с</span>
+      <span>24–48ц хүргэлт</span>
+      <span>Баталгаат чанар</span>
     </div>
-    <button class="hero__menu-btn" aria-label="Цэс">☰</button>
-  </nav>
 
-  <div class="hero__badges">
-    <span>Үнэгүй хүргэлт 6,000₮-с</span>
-    <span>24–48ц хүргэлт</span>
-    <span>Баталгаат чанар</span>
-  </div>
-
-  <div class="hero__stage" id="heroStage">
-    <img src="assets/product-clock.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--1">
-    <img src="assets/product-camera.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--2">
-    <img src="assets/product-turntable.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--3" data-scroll-drift="true">
-    <img src="assets/product-lamp.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--4">
-  </div>
-
-  <div class="hero__copy">
-    <div class="hero__seal" aria-hidden="true">
-      <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#8f6c26" stroke-width="1.5"/><path d="M30 16 L33 27 L44 30 L33 33 L30 44 L27 33 L16 30 L27 27 Z" fill="#c9a44c"/></svg>
+    <div class="hero__stage" id="heroStage">
+      <img src="assets/product-clock.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--1">
+      <img src="assets/product-camera.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--2">
+      <img src="assets/product-lamp.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--4">
     </div>
-    <h1 class="hero__title">Одод шиг онцгой<br>сонголтууд</h1>
-    <p class="hero__subtitle">Танд тохирсон бараа энд байна</p>
-    <a href="#categories" class="hero__cta">Дэлгүүр үзэх</a>
-  </div>
-</section>
 
-<section class="next-section" id="categories">
-  <span class="next-section__eyebrow">Категори · демо</span>
-  <h2 class="next-section__title">Цаашид энд категорийн жагсаалт орно</h2>
-</section>
+    <div class="hero__copy">
+      <div class="hero__seal" aria-hidden="true">
+        <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#8f6c26" stroke-width="1.5"/><path d="M30 16 L33 27 L44 30 L33 33 L30 44 L27 33 L16 30 L27 27 Z" fill="#c9a44c"/></svg>
+      </div>
+      <h1 class="hero__title">Одод шиг онцгой<br>сонголтууд</h1>
+      <p class="hero__subtitle">Танд тохирсон бараа энд байна</p>
+      <a href="#categories" class="hero__cta">Дэлгүүр үзэх</a>
+    </div>
+  </section>
+
+  <img src="assets/product-turntable.png" alt="Жишээ бүтээгдэхүүн" class="drift-product" id="driftProduct">
+
+  <section class="next-section" id="categories">
+    <div class="next-section__zone next-section__zone--drift" aria-hidden="true"></div>
+    <div class="next-section__zone next-section__zone--content">
+      <span class="next-section__eyebrow">Категори · демо</span>
+      <h2 class="next-section__title">Цаашид энд категорийн жагсаалт орно</h2>
+    </div>
+  </section>
+</div>
 
 <footer class="site-footer">
   <div class="logo-mark logo-mark--small">
-    <span class="logo-mark__text">STARSHOPPING</span>
+    <span class="logo-mark__text"><span class="logo-mark__star">Star</span><span class="logo-mark__shopping">shopping</span></span>
   </div>
   <div class="site-footer__contact">
     <a href="tel:88104640">📞 8810-4640</a>
