@@ -13,23 +13,14 @@
 <body>
 
 <div class="demo-banner">
-  ЭНЭ БОЛ ЗӨВХӨН ХӨДӨЛГӨӨНИЙ ПРОТОТИП (v2) — 2 бүтээгдэхүүнээр эхэлж байна, зураг/категори бүгд placeholder
+  ЭНЭ БОЛ ЗӨВХӨН ХӨДӨЛГӨӨНИЙ ПРОТОТИП (v3) — 4 бүтээгдэхүүнтэй, зураг/категори бүгд placeholder
 </div>
 
 <section class="hero" id="hero">
+  <div class="hero__glow" aria-hidden="true"></div>
+
   <nav class="hero__nav">
     <div class="logo-mark">
-      <svg viewBox="0 0 100 60" class="logo-mark__glyph" aria-hidden="true">
-        <path d="M12 20 C4 30, 8 42, 20 44 C30 45, 36 38, 40 30 L60 30 C64 38, 70 45, 80 44 C92 42, 96 30, 88 20" fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/>
-        <path d="M50 14 L54 28 L68 30 L54 32 L50 46 L46 32 L32 30 L46 28 Z" fill="url(#g)"/>
-        <defs>
-          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#f0d48a"/>
-            <stop offset="0.5" stop-color="#c9a44c"/>
-            <stop offset="1" stop-color="#8f6c26"/>
-          </linearGradient>
-        </defs>
-      </svg>
       <span class="logo-mark__text">STARSHOPPING</span>
     </div>
     <button class="hero__menu-btn" aria-label="Цэс">☰</button>
@@ -42,8 +33,10 @@
   </div>
 
   <div class="hero__stage" id="heroStage">
-    <img src="assets/product-clock.png" alt="Жишээ бүтээгдэхүүн 1" class="hero__product hero__product--1">
-    <img src="assets/product-turntable.png" alt="Жишээ бүтээгдэхүүн 2" class="hero__product hero__product--2">
+    <img src="assets/product-clock.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--1">
+    <img src="assets/product-camera.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--2">
+    <img src="assets/product-turntable.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--3" data-scroll-drift="true">
+    <img src="assets/product-lamp.png" alt="Жишээ бүтээгдэхүүн" class="hero__product hero__product--4">
   </div>
 
   <div class="hero__copy">

@@ -45,14 +45,30 @@ body {
   overflow: hidden;
 }
 
+.hero__glow {
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  right: -10%;
+  height: 70%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 55% at 22% 20%, rgba(240, 212, 138, 0.55), transparent 70%),
+    radial-gradient(32% 48% at 75% 10%, rgba(201, 164, 76, 0.4), transparent 70%),
+    radial-gradient(45% 60% at 55% 35%, rgba(230, 218, 197, 0.6), transparent 70%);
+  filter: blur(40px);
+}
+
 .hero__nav {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .logo-mark { display: flex; align-items: center; gap: 0.5rem; }
-.logo-mark__glyph { width: 28px; height: auto; }
 .logo-mark__text {
   font-weight: 600;
   font-size: 0.8rem;
@@ -73,6 +89,8 @@ body {
 }
 
 .hero__badges {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -91,6 +109,7 @@ body {
 /* product stage */
 .hero__stage {
   position: relative;
+  z-index: 2;
   flex: 1;
   min-height: 300px;
   margin-top: 1.25rem;
@@ -99,23 +118,14 @@ body {
 .hero__product {
   position: absolute;
   height: auto;
-  filter: drop-shadow(0 24px 30px rgba(36, 31, 24, 0.25));
+  filter: drop-shadow(0 20px 26px rgba(36, 31, 24, 0.22));
   will-change: transform, opacity;
 }
 
-.hero__product--1 {
-  width: 34%;
-  top: 2%;
-  left: 2%;
-  z-index: 2;
-}
-
-.hero__product--2 {
-  width: 58%;
-  top: 18%;
-  right: 0%;
-  z-index: 1;
-}
+.hero__product--1 { width: 26%; top: 4%;  left: -2%; z-index: 2; }
+.hero__product--2 { width: 34%; top: 14%; left: 24%; z-index: 3; }
+.hero__product--3 { width: 40%; top: 30%; left: 46%; z-index: 2; }
+.hero__product--4 { width: 24%; top: 8%;  left: 78%; z-index: 1; }
 
 .hero__copy {
   position: relative;
@@ -203,8 +213,10 @@ body {
 @media (min-width: 860px) {
   .hero { padding: 2rem 3.5rem 3rem; }
   .hero__badges span { font-size: 0.72rem; padding: 0.4rem 0.9rem; }
-  .hero__stage { min-height: 420px; }
-  .hero__product--1 { width: 20%; top: -2%; left: 4%; }
-  .hero__product--2 { width: 34%; top: 10%; right: 6%; }
+  .hero__stage { min-height: 440px; }
+  .hero__product--1 { width: 14%; top: 6%;  left: 2%; }
+  .hero__product--2 { width: 19%; top: 16%; left: 22%; }
+  .hero__product--3 { width: 23%; top: 30%; left: 44%; }
+  .hero__product--4 { width: 13%; top: 10%; left: 72%; }
   .hero__copy { max-width: 480px; }
 }
