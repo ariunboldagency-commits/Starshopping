@@ -55,7 +55,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--fg);
 }
 
-.topbar__icons { display: flex; gap: 0.5rem; }
+.topbar__icons { display: flex; gap: 0.5rem; align-items: center; }
 .icon-btn {
   width: 34px; height: 34px;
   border-radius: 50%;
@@ -64,6 +64,51 @@ a { color: inherit; text-decoration: none; }
   font-size: 0.95rem;
   color: var(--fg);
 }
+.icon-btn--wide {
+  width: auto; height: 34px;
+  display: flex; align-items: center; gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0 0.85rem;
+  font-size: 0.86rem;
+}
+.icon-btn__text {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+@media (max-width: 520px) {
+  .icon-btn__text { display: none; }
+  .icon-btn--wide { width: 34px; padding: 0; justify-content: center; }
+}
+
+.helppop {
+  position: absolute;
+  top: calc(100% - 0.4rem);
+  right: 1.1rem;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 190px;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(14, 10, 16, 0.97);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
+}
+.helppop__title {
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.helppop a { font-size: 1rem; font-weight: 700; }
+.helppop a:hover { color: #ffb469; }
+.helppop__note { font-size: 0.68rem; color: var(--fg-dim); margin-top: 0.2rem; }
+
+/* two-up field rows for the address block */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.7rem; }
 
 .rail {
   position: fixed;
@@ -120,7 +165,10 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.01em;
   white-space: nowrap;
   color: var(--fg);
-  font-size: min(19vw, calc(92vw / (var(--chars) * 0.72)));
+  /* the fallback matters: if --chars ever goes missing the calc becomes
+     invalid and the whole declaration is dropped, collapsing the type to the
+     browser default */
+  font-size: min(19vw, calc(92vw / (var(--chars, 6) * 0.72)));
   transform: translateX(-50%);
 }
 .hero__word--back  { z-index: 1; top: 39%; }
@@ -193,7 +241,7 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--font-display);
   font-weight: 900;
   line-height: 0.94;
-  font-size: min(13vw, calc(46vw / (var(--chars) * 0.72)));
+  font-size: min(13vw, calc(46vw / (var(--chars, 6) * 0.72)));
 }
 
 .cat__cta {
@@ -539,17 +587,110 @@ textarea.input { resize: vertical; min-height: 74px; }
 .copy:hover { border-color: var(--fg); }
 .copy.is-done { border-color: var(--ok); color: var(--ok); }
 
-.bank {
+/* payment card — warm amber on near-black so the account numbers are the
+   brightest thing on the screen without turning into a loud alert box */
+.pay {
   text-align: left;
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  border: 1px solid rgba(255, 150, 60, 0.32);
+  border-radius: 20px;
   padding: 1.1rem;
   margin-bottom: 1.4rem;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 140, 45, 0.14), transparent 62%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 190, 130, 0.14);
 }
-.bank__row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.42rem 0; font-size: 0.86rem; }
-.bank__row + .bank__row { border-top: 1px solid rgba(255, 255, 255, 0.08); }
-.bank__k { color: var(--fg-dim); }
-.bank__v { font-weight: 600; text-align: right; }
+
+.pay__head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px solid rgba(255, 150, 60, 0.2);
+  margin-bottom: 0.95rem;
+}
+.pay__logo {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+.pay__bank { font-weight: 700; font-size: 0.92rem; }
+.pay__holder { font-size: 0.76rem; color: var(--fg-dim); margin-top: 0.12rem; }
+.pay__amount { margin-left: auto; text-align: right; }
+.pay__amount span {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: var(--fg-dim);
+}
+.pay__amount b {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #ffb469;
+}
+
+.acct + .acct { margin-top: 0.75rem; }
+.acct__label {
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin-bottom: 0.35rem;
+}
+.acct__label em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: 0.7; }
+.acct__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 150, 60, 0.22);
+  border-radius: 12px;
+  padding: 0.6rem 0.6rem 0.6rem 0.85rem;
+}
+.acct__no {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.98rem;
+  letter-spacing: 0.02em;
+  color: #ffd9b0;
+  overflow-wrap: anywhere;
+}
+.copy--sm {
+  flex-shrink: 0;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.72rem;
+  border-color: rgba(255, 150, 60, 0.4);
+  color: #ffb469;
+}
+.copy--sm:hover { border-color: #ffb469; }
+
+/* order code ↔ phone, so a lost code still has a way back to the order */
+.code__phone {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.code__phone span { font-size: 0.62rem; letter-spacing: 0.16em; color: var(--fg-dim); }
+.code__phone b { font-size: 0.98rem; font-weight: 700; }
+
+.helpline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.95rem;
+}
+.helpline__k { font-size: 0.62rem; letter-spacing: 0.16em; color: var(--fg-dim); }
+.helpline__v { font-size: 1rem; font-weight: 700; }
+.helpline__note { font-size: 0.72rem; color: var(--fg-dim); margin-top: 0.2rem; }
 
 .warn {
   border: 1px solid rgba(255, 90, 60, 0.45);
@@ -612,7 +753,7 @@ textarea.input { resize: vertical; min-height: 74px; }
   .rail__line.is-active { width: 64px; }
   .edge { right: 24px; }
 
-  .hero__word { font-size: min(10.5vw, calc(76vw / (var(--chars) * 0.72))); }
+  .hero__word { font-size: min(10.5vw, calc(76vw / (var(--chars, 6) * 0.72))); }
   .hero__word--back  { top: 33%; }
   .hero__word--front { top: 55%; }
 
@@ -621,7 +762,7 @@ textarea.input { resize: vertical; min-height: 74px; }
   .cats__stage { height: 58svh; }
   .cat { gap: 2rem; }
   .cat__side { flex-basis: 44%; gap: 1.4rem; }
-  .cat__name { font-size: min(7.5vw, calc(38vw / (var(--chars) * 0.72))); }
+  .cat__name { font-size: min(7.5vw, calc(38vw / (var(--chars, 6) * 0.72))); }
   .cat__cta { font-size: 0.92rem; padding: 0.8rem 1.4rem; }
   .cat__img { flex-basis: 56%; }
   .arrow { width: 70px; height: 70px; }

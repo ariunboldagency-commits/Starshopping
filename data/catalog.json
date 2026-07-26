@@ -31,6 +31,7 @@
       "images": ["assets/p/bottle-a.jpg", "assets/p/bottle-b.jpg", "assets/p/bottle-c.jpg"],
       "colors": ["Шар", "Ягаан", "Цэнхэр", "Цагаан"],
       "sizes": ["350мл", "500мл"],
+      "sizePrices": [45900, 62900],
       "stock": 12,
       "active": true
     },

@@ -39,12 +39,15 @@ const SHEETS = {
 };
 
 // Products хуудсанд хожим нэмэгдсэн баганууд
-const EXTRA_PRODUCT_COLS = ['colorImages', 'sizeImages'];
+const EXTRA_PRODUCT_COLS = ['colorImages', 'sizeImages', 'sizePrices'];
 
+// Шинэ багана нэмэхдээ ЗӨВХӨН төгсгөлд нь нэмнэ — дунд нь оруулбал аль
+// хэдийн бичигдсэн мөрүүд баганаасаа хазайна.
 const ORDER_HEADERS = [
   'Огноо', 'Захиалгын код', 'Нэр', 'Утас', 'Хаяг',
   'Бараа', 'Өнгө', 'Хэмжээ', 'Тоо',
-  'Нэгж үнэ', 'Хүргэлт', 'Нийт дүн', 'Төлбөрийн сонголт', 'Төлөв'
+  'Нэгж үнэ', 'Хүргэлт', 'Нийт дүн', 'Төлбөрийн сонголт', 'Төлөв',
+  'Нэмэлт утас'
 ];
 
 /* ====================================================================
@@ -93,6 +96,7 @@ function setup() {
 
   ss.getSheetByName(SHEETS.products).setFrozenRows(1);
   addMissingProductColumns_(ss);
+  [SHEETS.orders, SHEETS.archive].forEach(function (n) { syncOrderHeaders_(ss, n); });
 
   // 48 цагийн архивлалт — өдөрт 2 удаа
   const has = ScriptApp.getProjectTriggers().some(function (t) {
@@ -124,6 +128,21 @@ function addMissingProductColumns_(ss) {
   EXTRA_PRODUCT_COLS.forEach(function (name) {
     if (head.indexOf(name) === -1) {
       sheet.getRange(1, sheet.getLastColumn() + 1).setValue(name);
+    }
+  });
+}
+
+/** Orders/Archive-д дутуу гарчгийг төгсгөлд нь нэмнэ. */
+function syncOrderHeaders_(ss, name) {
+  const sheet = ss.getSheetByName(name);
+  if (!sheet) return;
+  const width = Math.max(1, sheet.getLastColumn());
+  const head = sheet.getRange(1, 1, 1, width).getValues()[0].map(function (h) {
+    return String(h).trim();
+  });
+  ORDER_HEADERS.forEach(function (h) {
+    if (head.indexOf(h) === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(h).setFontWeight('bold');
     }
   });
 }
@@ -201,9 +220,10 @@ function readProducts() {
         images: images,
         colors: splitList(r.colors),
         sizes: splitList(r.sizes),
-        // сонголт бүрт харгалзах зураг; colors/sizes-тэй ижил дараалалтай
+        // сонголт бүрт харгалзах зураг, үнэ; colors/sizes-тэй ижил дараалалтай
         colorImages: splitList(r.colorImages),
         sizeImages: splitList(r.sizeImages),
+        sizePrices: splitList(r.sizePrices).map(Number),
         stock: Number(r.stock) || 0,
         active: true
       };
@@ -261,7 +281,8 @@ function doPost(e) {
       ship,
       unit * qty + ship,
       String(body.payment || ''),
-      'Шинэ'
+      'Шинэ',
+      String(body.phone2 || '')
     ]);
 
     const count = sheet.getLastRow() - 1;

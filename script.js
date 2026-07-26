@@ -38,16 +38,26 @@ const esc = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 /* Discount column holds a percentage. Empty means the product simply has no
-   sale — nothing renders, rather than a 0% badge. */
-function priceOf(p) {
+   sale — nothing renders, rather than a 0% badge.
+   `base` lets a size override the product price: a 500ml bottle is not the
+   same product as a 350ml one, so sizePrices in the sheet can set a price per
+   size and the discount still applies on top of whichever one is picked. */
+function priceOf(p, base) {
+  const list = Number(base !== undefined && base !== null && base !== "" ? base : p.price);
   const d = Number(p.discount);
   const on = p.discount !== null && p.discount !== "" && !Number.isNaN(d) && d > 0;
   return {
     on,
     pct: d,
-    was: Number(p.price),
-    now: on ? Math.round((Number(p.price) * (1 - d / 100)) / 100) * 100 : Number(p.price),
+    was: list,
+    now: on ? Math.round((list * (1 - d / 100)) / 100) * 100 : list,
   };
+}
+
+/* Cheapest variant, so a list row shows "from" pricing that matches reality. */
+function lowestPrice(p) {
+  const sp = listOf(p.sizePrices).map(Number).filter((n) => n > 0);
+  return sp.length ? Math.min(...sp) : Number(p.price);
 }
 
 const productsIn = (slug) => DB.products.filter((p) => p.active !== false && p.category === slug);
@@ -239,7 +249,12 @@ function destroyHomeMotion() {
   }
   homeTriggers.forEach((t) => t && t.kill());
   homeTriggers = [];
-  gsap.set([camImg, ".hero__word", ".hero__veil", ".hero__cue", ".cats__emerge"], { clearProps: "all" });
+  gsap.set([camImg, ".hero__veil", ".hero__cue", ".cats__emerge"], { clearProps: "all" });
+  // The words carry --chars inline, and that is what their font-size calc is
+  // built on. clearProps:"all" would wipe it along with the tween, leaving an
+  // invalid calc and type that collapses to the browser default — so only the
+  // property actually animated gets cleared here.
+  gsap.set(".hero__word", { clearProps: "opacity" });
 }
 
 const railEl = document.getElementById("rail");
@@ -257,6 +272,27 @@ railLines.forEach((line) =>
   )
 );
 
+/* The delivery helpline lives behind a button rather than sitting on every
+   page, so the numbers stay findable without shouting from every screen. */
+const helpBtn = document.getElementById("helpBtn");
+const helpPop = document.getElementById("helpPop");
+
+const toggleHelp = (open) => {
+  helpPop.hidden = !open;
+  helpBtn.setAttribute("aria-expanded", String(open));
+};
+
+helpBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  toggleHelp(helpPop.hidden);
+});
+document.addEventListener("click", (e) => {
+  if (!helpPop.hidden && !helpPop.contains(e.target)) toggleHelp(false);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") toggleHelp(false);
+});
+
 /* ========================================================================
    CATEGORY VIEW
    ===================================================================== */
@@ -269,7 +305,8 @@ function renderCategory(slug) {
   const plist = document.getElementById("plist");
   plist.innerHTML = "";
   items.forEach((p) => {
-    const pr = priceOf(p);
+    const sizePrices = listOf(p.sizePrices).map(Number).filter((n) => n > 0);
+    const pr = priceOf(p, lowestPrice(p));
     const row = document.createElement("a");
     row.className = "prow";
     row.href = `#/p/${p.slug}`;
@@ -280,7 +317,7 @@ function renderCategory(slug) {
     info.innerHTML = `
       <span class="prow__name">${esc(p.name)}</span>
       <span class="prow__prices">
-        <span class="price-now">${money(pr.now)}</span>
+        <span class="price-now">${sizePrices.length > 1 ? money(pr.now) + "-с" : money(pr.now)}</span>
         ${pr.on ? `<span class="price-was">${money(pr.was)}</span>` : ""}
       </span>
       ${pr.on ? `<span class="tag">-${pr.pct}%</span>` : ""}
@@ -298,11 +335,14 @@ function renderCategory(slug) {
 function renderProduct(slug) {
   const p = productBy(slug);
   if (!p) return goHome();
-  const pr = priceOf(p);
   const colors = listOf(p.colors);
   const sizes = listOf(p.sizes);
   const colorImgs = listOf(p.colorImages).map(imageUrl);
   const sizeImgs = listOf(p.sizeImages).map(imageUrl);
+  const sizePrices = listOf(p.sizePrices).map(Number);
+  // price follows the selected size when the sheet gives one per size
+  const priceForSize = (i) => (sizePrices[i] > 0 ? sizePrices[i] : Number(p.price));
+  let pr = priceOf(p, sizes.length ? priceForSize(0) : p.price);
   const cat = categoryBy(p.category);
   const revs = reviewsFor(p.slug);
 
@@ -375,11 +415,7 @@ function renderProduct(slug) {
   right.innerHTML = `
     <h1 class="pdp__name">${esc(p.name)}</h1>
     ${p.desc ? `<p class="pdp__desc">${esc(p.desc)}</p>` : ""}
-    <div class="pdp__prices">
-      <span class="price-now">${money(pr.now)}</span>
-      ${pr.on ? `<span class="price-was">${money(pr.was)}</span>` : ""}
-      ${pr.on ? `<span class="tag">-${pr.pct}%</span>` : ""}
-    </div>
+    <div class="pdp__prices" id="pdpPrices"></div>
 
     ${colors.length ? `<div class="opt"><span class="opt__label">ӨНГӨ</span>
       <div class="opt__row" data-opt="color">
@@ -407,7 +443,7 @@ function renderProduct(slug) {
     <div class="trust">
       <div><b>Хүргэлт</b>Энгийн 6,000₮ · Шуурхай 12,000₮</div>
       <div><b>Төлбөр</b>Хүргэлтээр эсвэл шилжүүлгээр</div>
-      <div><b>Холбоо</b>8810-4640 · 9411-4495</div>
+      <div><b>Хугацаа</b>Захиалга баталгаажсаны дараа</div>
       <div><b>Захиалгын код</b>Бүртгэл, хяналттай</div>
     </div>`;
   wrap.appendChild(right);
@@ -416,14 +452,21 @@ function renderProduct(slug) {
   /* ---- selection state ---- */
   let qty = 1;
   let color = colors[0] || "";
+  let sizeIdx = sizes.length ? 0 : -1;
   let size = sizes[0] || "";
   const qtyVal = right.querySelector("#qtyVal");
   const buyTotal = right.querySelector("#buyTotal");
+  const priceBox = right.querySelector("#pdpPrices");
 
-  const refreshTotal = () => {
+  const refreshPrice = () => {
+    pr = priceOf(p, sizeIdx >= 0 ? priceForSize(sizeIdx) : p.price);
+    priceBox.innerHTML = `
+      <span class="price-now">${money(pr.now)}</span>
+      ${pr.on ? `<span class="price-was">${money(pr.was)}</span>` : ""}
+      ${pr.on ? `<span class="tag">-${pr.pct}%</span>` : ""}`;
     buyTotal.textContent = `${qty} ширхэг · ${money(pr.now * qty)}`;
   };
-  refreshTotal();
+  refreshPrice();
 
   right.querySelectorAll(".opt__row").forEach((row) =>
     row.addEventListener("click", (e) => {
@@ -436,7 +479,9 @@ function renderProduct(slug) {
         showVariantImage(colorImgs[i]);
       } else {
         size = sizes[i];
+        sizeIdx = i;
         showVariantImage(sizeImgs[i]);
+        refreshPrice(); // a bigger size is a different price
       }
     })
   );
@@ -445,7 +490,7 @@ function renderProduct(slug) {
     b.addEventListener("click", () => {
       qty = Math.max(1, qty + Number(b.dataset.step));
       qtyVal.textContent = String(qty);
-      refreshTotal();
+      refreshPrice();
     })
   );
 
@@ -575,13 +620,28 @@ function renderOrder() {
           <span class="field__label">НЭР</span>
           <input class="input" id="fName" type="text" placeholder="Таны нэр" autocomplete="name">
         </div>
-        <div class="field">
-          <span class="field__label">УТАСНЫ ДУГААР</span>
-          <input class="input" id="fPhone" type="tel" inputmode="numeric" maxlength="8" placeholder="8 оронтой дугаар" autocomplete="tel">
+        <div class="grid2">
+          <div class="field">
+            <span class="field__label">УТАС</span>
+            <input class="input" id="fPhone" type="tel" inputmode="numeric" maxlength="8" placeholder="8 оронтой" autocomplete="tel">
+          </div>
+          <div class="field">
+            <span class="field__label">НЭМЭЛТ УТАС</span>
+            <input class="input" id="fPhone2" type="tel" inputmode="numeric" maxlength="8" placeholder="8 оронтой">
+          </div>
+        </div>
+
+        <span class="field__label">ХҮРГҮҮЛЭХ ХАЯГ</span>
+        <div class="grid2">
+          <div class="field"><input class="input" id="aCity" type="text" placeholder="Хот / Аймаг"></div>
+          <div class="field"><input class="input" id="aDist" type="text" placeholder="Дүүрэг / Сум"></div>
+          <div class="field"><input class="input" id="aKhoroo" type="text" placeholder="Хороо / Баг"></div>
+          <div class="field"><input class="input" id="aBuilding" type="text" placeholder="Байр / Гудамж"></div>
+          <div class="field"><input class="input" id="aEntrance" type="text" placeholder="Орц"></div>
+          <div class="field"><input class="input" id="aDoor" type="text" placeholder="Тоот"></div>
         </div>
         <div class="field">
-          <span class="field__label">ХҮРГҮҮЛЭХ ХАЯГ</span>
-          <textarea class="input" id="fAddr" placeholder="Дүүрэг, хороо, байр, орц, тоот" autocomplete="street-address"></textarea>
+          <input class="input" id="aExtra" type="text" placeholder="Нэмэлт заавар (заавал биш)">
         </div>
 
         <p class="err" id="formErr"></p>
@@ -638,14 +698,33 @@ function renderOrder() {
     e.preventDefault();
     if (sending) return;
 
-    const name = page.querySelector("#fName").value.trim();
-    const phone = page.querySelector("#fPhone").value.trim();
-    const addr = page.querySelector("#fAddr").value.trim();
+    const val = (id) => page.querySelector("#" + id).value.trim();
+    const name = val("fName");
+    const phone = val("fPhone");
+    const phone2 = val("fPhone2");
+
+    const parts = [
+      ["Хот/Аймаг", val("aCity")],
+      ["Дүүрэг/Сум", val("aDist")],
+      ["Хороо/Баг", val("aKhoroo")],
+      ["Байр/Гудамж", val("aBuilding")],
+      ["Орц", val("aEntrance")],
+      ["Тоот", val("aDoor")],
+    ];
 
     if (!name) return (err.textContent = "Нэрээ бичнэ үү.");
     if (!/^\d{8}$/.test(phone)) return (err.textContent = "Утасны дугаар 8 оронтой тоо байх ёстой.");
-    if (!addr) return (err.textContent = "Хүргүүлэх хаягаа бичнэ үү.");
+    if (!/^\d{8}$/.test(phone2)) return (err.textContent = "Нэмэлт утасны дугаар 8 оронтой тоо байх ёстой.");
+    if (phone === phone2) return (err.textContent = "Нэмэлт утас нь өөр хүний дугаар байх ёстой.");
+
+    const missing = parts.find(([, v]) => !v);
+    if (missing) return (err.textContent = `Хаягийн "${missing[0]}" талбарыг бөглөнө үү.`);
     err.textContent = "";
+
+    // The sheet keeps one row per order, so the address pieces are folded into
+    // a single readable line for the delivery driver.
+    const extra = val("aExtra");
+    const addr = parts.map(([k, v]) => `${k}: ${v}`).join(", ") + (extra ? ` (${extra})` : "");
 
     sending = true;
     btn.querySelector(".buy__label").textContent = "ИЛГЭЭЖ БАЙНА…";
@@ -657,7 +736,7 @@ function renderOrder() {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
-          name, phone, address: addr,
+          name, phone, phone2, address: addr,
           product: d.name, color: d.color, size: d.size,
           qty: d.qty, price: d.unit,
           delivery: shipPrice, deliveryName: shipName,
@@ -672,7 +751,7 @@ function renderOrder() {
 
       sessionStorage.setItem(
         "ss_done",
-        JSON.stringify({ code: out.code, total: goods + shipPrice, payment, name, phone })
+        JSON.stringify({ code: out.code, total: goods + shipPrice, payment, name, phone, phone2 })
       );
       location.hash = "#/done";
     } catch (ex) {
@@ -697,63 +776,118 @@ function renderDone() {
   const s = DB.shop || {};
   const transfer = info.payment === "Шилжүүлгээр төлөх";
 
+  const acct = String(s.account || "");
+  const iban = "MN" + acct;
+
   document.getElementById("donePage").innerHTML = `
     <div class="done">
       <div class="done__mark">✓</div>
       <h1 class="done__title">Захиалга хүлээн авлаа</h1>
-      <p class="done__lead">
-        ${esc(info.name)}, баярлалаа. Бид ${esc(info.phone)} дугаараар тантай холбогдож<br>
-        захиалгыг баталгаажуулна.
-      </p>
+      <p class="done__lead">${esc(info.name)}, баярлалаа. Бид удахгүй тантай холбогдоно.</p>
 
       <div class="code">
         <div class="code__label">ТАНЫ ЗАХИАЛГЫН КОД</div>
         <div class="code__value" id="codeVal">${esc(info.code)}</div>
-        <button class="copy" id="copyBtn">Кодыг хуулах</button>
+        <button class="copy" data-copy="${esc(info.code)}">Кодыг хуулах</button>
+        <div class="code__phone">
+          <span>Бүртгэсэн утас</span>
+          <b>${esc(info.phone)}${info.phone2 ? " · " + esc(info.phone2) : ""}</b>
+        </div>
       </div>
 
       ${
         transfer
           ? `<div class="warn">
               <b>Гүйлгээний утга дээр яг <u>${esc(info.code)}</u> гэж бичнэ үү.</b><br>
-              Утга буруу бол таны шилжүүлгийг захиалгатай тааруулахад хүндрэлтэй.
-              Дээрх товчоор хуулж тавибал алдахгүй.
+              Утга буруу бичигдвэл шилжүүлгийг захиалгатай тааруулахад хүндрэлтэй.
+              Дээрх товчоор хуулбал алдахгүй.
             </div>
-            <div class="bank">
-              <div class="bank__row"><span class="bank__k">Банк</span><span class="bank__v">${esc(s.bank || "")}</span></div>
-              <div class="bank__row"><span class="bank__k">Данс</span><span class="bank__v">${esc(s.account || "")}</span></div>
-              <div class="bank__row"><span class="bank__k">Хүлээн авагч</span><span class="bank__v">${esc(s.holder || "")}</span></div>
-              <div class="bank__row"><span class="bank__k">Шилжүүлэх дүн</span><span class="bank__v">${money(info.total)}</span></div>
+
+            <div class="pay">
+              <div class="pay__head">
+                <img class="pay__logo" src="assets/bank-tdb.png" alt="">
+                <div>
+                  <div class="pay__bank">${esc(s.bank || "")}</div>
+                  <div class="pay__holder">${esc(s.holder || "")}</div>
+                </div>
+                <div class="pay__amount">
+                  <span>Шилжүүлэх дүн</span>
+                  <b>${money(info.total)}</b>
+                </div>
+              </div>
+
+              <div class="acct">
+                <div class="acct__label">Дансны дугаар</div>
+                <div class="acct__row">
+                  <span class="acct__no">${esc(acct)}</span>
+                  <button class="copy copy--sm" data-copy="${esc(acct)}">Хуулах</button>
+                </div>
+              </div>
+
+              <div class="acct">
+                <div class="acct__label">IBAN дугаар <em>(гадаад/зарим банкнаас шилжүүлэхэд)</em></div>
+                <div class="acct__row">
+                  <span class="acct__no">${esc(iban)}</span>
+                  <button class="copy copy--sm" data-copy="${esc(iban)}">Хуулах</button>
+                </div>
+              </div>
             </div>`
-          : `<div class="bank">
-              <div class="bank__row"><span class="bank__k">Төлбөр</span><span class="bank__v">Хүргэлтээр төлнө</span></div>
-              <div class="bank__row"><span class="bank__k">Төлөх дүн</span><span class="bank__v">${money(info.total)}</span></div>
+          : `<div class="pay">
+              <div class="pay__head">
+                <div>
+                  <div class="pay__bank">Хүргэлтээр төлнө</div>
+                  <div class="pay__holder">Бараагаа хүлээж авахдаа төлнө</div>
+                </div>
+                <div class="pay__amount">
+                  <span>Төлөх дүн</span>
+                  <b>${money(info.total)}</b>
+                </div>
+              </div>
             </div>`
       }
 
-      <p class="note">
-        Асуух зүйл байвал: 8810-4640 · 9411-4495<br>
-        Захиалгын кодоо хэлэхэд бид шууд олно.
-      </p>
+      <div class="helpline">
+        <span class="helpline__k">Хүргэлтийн лавлах</span>
+        <span class="helpline__v">
+          <a href="tel:88104640">8810-4640</a> · <a href="tel:94114495">9411-4495</a>
+        </span>
+        <span class="helpline__note">Захиалгын кодоо хэлэхэд бид шууд олно.</span>
+      </div>
+
       <a class="buy" href="#/" style="margin-top:1.4rem">
         <span class="buy__label">НҮҮР ХУУДАС РУУ</span>
       </a>
     </div>`;
 
-  const btn = document.getElementById("copyBtn");
-  btn.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(info.code);
-    } catch {
-      const r = document.createRange();
-      r.selectNode(document.getElementById("codeVal"));
-      getSelection().removeAllRanges();
-      getSelection().addRange(r);
-      document.execCommand("copy");
-      getSelection().removeAllRanges();
-    }
-    btn.textContent = "Хуулагдлаа ✓";
-    btn.classList.add("is-done");
+  bindCopyButtons(document.getElementById("donePage"));
+}
+
+/* Copy-to-clipboard with a fallback for browsers that refuse the async API
+   outside a secure context. */
+function bindCopyButtons(root) {
+  root.querySelectorAll("[data-copy]").forEach((btn) => {
+    const original = btn.textContent;
+    btn.addEventListener("click", async () => {
+      const text = btn.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      btn.textContent = "Хуулагдлаа ✓";
+      btn.classList.add("is-done");
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove("is-done");
+      }, 2000);
+    });
   });
 }
 
