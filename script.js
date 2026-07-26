@@ -9,7 +9,7 @@ gsap.registerPlugin(ScrollTrigger);
    instead of showing an empty page.
    ===================================================================== */
 const DATA_SOURCE =
-  "https://script.google.com/macros/s/AKfycbwoe-iR0KYplGlQwBLpU6EMqjDlXKp_IMcMXJD9-R6EVPKJ37W-aJOVx4DF6IMpnA-WQw/exec";
+  "https://script.google.com/macros/s/AKfycbxgZXinsMEqVuUl_kysPwSx136wbZhlLaT0emmy7TvOVP96PiUV7f-4QYU6ni-0Dl41/exec";
 const DATA_FALLBACK = "data/catalog.json";
 
 let DB = { shop: {}, categories: [], products: [], reviews: [] };
