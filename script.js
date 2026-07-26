@@ -9,7 +9,7 @@ gsap.registerPlugin(ScrollTrigger);
    instead of showing an empty page.
    ===================================================================== */
 const DATA_SOURCE =
-  "https://script.google.com/macros/s/AKfycbyRz34Hm9SqKxFSAxbQ9L83lfn3WzBn-wWYl_3jTMbEali3DpgAisWJ9O_JxhN-qd7QiQ/exec";
+  "https://script.google.com/macros/s/AKfycbwoe-iR0KYplGlQwBLpU6EMqjDlXKp_IMcMXJD9-R6EVPKJ37W-aJOVx4DF6IMpnA-WQw/exec";
 const DATA_FALLBACK = "data/catalog.json";
 
 let DB = { shop: {}, categories: [], products: [], reviews: [] };
@@ -295,8 +295,6 @@ function renderCategory(slug) {
 /* ========================================================================
    PRODUCT VIEW
    ===================================================================== */
-const DELIVERY_DEFAULT = 0;
-
 function renderProduct(slug) {
   const p = productBy(slug);
   if (!p) return goHome();
