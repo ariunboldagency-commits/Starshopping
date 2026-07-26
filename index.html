@@ -2,150 +2,57 @@
 <html lang="mn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#000000">
-<title>Starshopping</title>
-<link rel="icon" href="assets/logo-mark.png">
+<meta name="robots" content="noindex">
+<title>Starshopping — шинэ хаяг</title>
+<link rel="canonical" href="https://starshopping-mn.github.io/">
+<meta http-equiv="refresh" content="0; url=https://starshopping-mn.github.io/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-
-<!-- Meta Pixel -->
-<script>
-!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1673931670377637');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1673931670377637&ev=PageView&noscript=1"/></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #000;
+    color: #fff;
+    font-family: "Inter", system-ui, sans-serif;
+    text-align: center;
+    padding: 2rem 1.25rem;
+  }
+  .brand {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 900;
+    font-size: clamp(1.8rem, 9vw, 2.8rem);
+    margin-bottom: 1rem;
+  }
+  p { font-size: 0.92rem; line-height: 1.7; color: rgba(255,255,255,0.55); margin-bottom: 1.8rem; }
+  a {
+    display: inline-block;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    padding: 0.95rem 2rem;
+    border-radius: 999px;
+  }
+</style>
 </head>
 <body>
-
-<!-- fixed chrome ------------------------------------------------------- -->
-<header class="topbar">
-  <a class="brand" href="#/">
-    <img class="brand__mark" src="assets/logo-mark.png" alt="">
-    <span class="brand__name">Starshopping</span>
-  </a>
-  <div class="topbar__icons">
-    <button class="icon-btn" aria-label="Хайх">⌕</button>
-    <button class="icon-btn icon-btn--wide" id="helpBtn" aria-expanded="false">
-      <span aria-hidden="true">☎</span>
-      <span class="icon-btn__text">Хүргэлтийн лавлах</span>
-    </button>
-  </div>
-
-  <div class="helppop" id="helpPop" hidden>
-    <span class="helppop__title">Хүргэлтийн лавлах</span>
-    <a href="tel:88104640">8810-4640</a>
-    <a href="tel:94114495">9411-4495</a>
-    <span class="helppop__note">Хүргэлтийн явц, хугацаа лавлах</span>
-  </div>
-</header>
-
-<nav class="rail" id="rail" aria-label="Хуудасны явц">
-  <button class="rail__line is-active" data-goto="hero" aria-label="Нүүр"></button>
-  <button class="rail__line" data-goto="cats" aria-label="Категори"></button>
-</nav>
-
-<aside class="edge" id="edge" aria-hidden="true">
-  <span>ШИНЭ ЦУГЛУУЛГА 2026 · ШИНЭ ЦУГЛУУЛГА 2026</span>
-</aside>
-
-<main>
-
-  <!-- ============================ HOME ============================ -->
-  <div class="view" id="viewHome">
-    <section class="hero" id="hero">
-      <div class="hero__inner">
-        <span class="hero__word hero__word--back" style="--chars:4">STAR</span>
-        <div class="hero__cam">
-          <img src="assets/hero-camera.png" alt="Онцлох бүтээгдэхүүн — камер">
-        </div>
-        <span class="hero__word hero__word--front" style="--chars:8">SHOPPING</span>
-        <div class="hero__veil"></div>
-      </div>
-      <span class="hero__cue">доош гүйлгэнэ үү</span>
-    </section>
-
-    <section class="cats" id="cats">
-      <div class="cats__emerge">
-        <span class="cats__eyebrow">КАТЕГОРИ · <span id="catIndex">01</span> / <span id="catTotal">01</span></span>
-        <div class="cats__stage" id="catsStage"></div>
-        <div class="cats__nav">
-          <div class="cats__arrows">
-            <button class="arrow" data-dir="-1" aria-label="Өмнөх категори">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <button class="arrow" data-dir="1" aria-label="Дараагийн категори">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-          </div>
-          <p class="cats__hint">Дараагийн категорийг сонгох бол<br>суман дээр дарна уу</p>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- ========================== CATEGORY ========================== -->
-  <div class="view" id="viewCategory" hidden>
-    <div class="page">
-      <a class="back" href="#/">← Нүүр</a>
-      <h1 class="page__title" id="catTitle"></h1>
-      <span class="page__meta" id="catMeta"></span>
-      <div class="plist" id="plist"></div>
-    </div>
-  </div>
-
-  <!-- =========================== PRODUCT =========================== -->
-  <div class="view" id="viewProduct" hidden>
-    <div class="page" id="pdp"></div>
-  </div>
-
-  <!-- ============================ ORDER ============================ -->
-  <div class="view" id="viewOrder" hidden>
-    <div class="page" id="orderPage"></div>
-  </div>
-
-  <!-- ========================= CONFIRMATION ========================= -->
-  <div class="view" id="viewDone" hidden>
-    <div class="page" id="donePage"></div>
-  </div>
-
-  <!-- =========================== POLICIES =========================== -->
-  <div class="view" id="viewPolicy" hidden>
-    <div class="page" id="policyPage"></div>
-  </div>
-
-</main>
-
-<footer class="foot">
-  <div class="foot__inner">
-    <a class="foot__brand" href="#/">
-      <img src="assets/logo-mark.png" alt="">
-      <span>Starshopping</span>
-    </a>
-    <nav class="foot__links">
-      <a href="#/policy/delivery">Хүргэлтийн нөхцөл</a>
-      <a href="#/policy/refund">Буцаалтын бодлого</a>
-      <a href="#/policy/terms">Үйлчилгээний нөхцөл</a>
-      <a href="#/policy/privacy">Нууцлалын бодлого</a>
-      <a href="#/policy/contact">Холбоо барих</a>
-    </nav>
-    <p class="foot__note">
-      ✉ Ariunbold.agency@gmail.com<br>
-      © <span id="year"></span> Starshopping
+  <main>
+    <div class="brand">Starshopping</div>
+    <p>
+      Дэлгүүр шинэ хаяг руу шилжсэн.<br>
+      Хэдхэн хормын дараа автоматаар шилжинэ.
     </p>
-  </div>
-</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="script.js"></script>
+    <a href="https://starshopping-mn.github.io/">starshopping-mn.github.io</a>
+  </main>
+  <!-- keep any deep link (#/p/slug) intact so shared product links still land -->
+  <script>location.replace("https://starshopping-mn.github.io/" + location.hash);</script>
 </body>
 </html>
