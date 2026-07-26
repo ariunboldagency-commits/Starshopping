@@ -396,6 +396,69 @@ a { color: inherit; text-decoration: none; }
 }
 .chip.is-active { border-color: var(--fg); background: var(--fg); color: #000; font-weight: 600; }
 
+/* bundle picker — the saving has to be legible at a glance or it does not
+   change what people buy */
+.packs { display: flex; flex-direction: column; gap: 0.55rem; }
+
+.pack {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.8rem 0.95rem;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.pack.is-active { border-color: var(--fg); background: rgba(255, 255, 255, 0.08); }
+
+.pack__dot {
+  width: 17px; height: 17px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  display: grid; place-items: center;
+}
+.pack.is-active .pack__dot { border-color: var(--fg); }
+.pack.is-active .pack__dot::after {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--fg);
+}
+
+.pack__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.pack__qty { font-size: 0.92rem; font-weight: 700; }
+.pack__label {
+  font-size: 0.72rem;
+  color: #ffb469;
+  font-weight: 600;
+}
+.pack__per { font-size: 0.72rem; color: var(--fg-dim); }
+
+.pack__right { text-align: right; display: flex; flex-direction: column; gap: 0.15rem; }
+.pack__price {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+}
+.pack__save {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #0d0d0d;
+  background: #ffb469;
+  border-radius: 5px;
+  padding: 0.1rem 0.35rem;
+}
+
+.sum__pack {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #0d0d0d;
+  background: #ffb469;
+  border-radius: 5px;
+  padding: 0.1rem 0.4rem;
+}
+
 .qty { display: flex; align-items: center; gap: 0.9rem; }
 .qty__btn {
   width: 38px; height: 38px; border-radius: 50%;

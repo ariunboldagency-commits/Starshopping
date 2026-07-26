@@ -3,15 +3,15 @@
  *
  * Энэ файл Google Sheet дээрх Apps Script рүү бүтнээр нь хуулагдана.
  *
- * Хийдэг ажил:
+ *   setup()   → Бүх хуудас, багана, тайлбар, цагийн бүс, trigger-ийг бэлдэнэ
  *   doGet()   → Каталогийг JSON болгож сайт руу өгнө
  *   doPost()  → Захиалга хүлээж авч, SS-0001 код үүсгэн Orders-д бичнэ
- *   setup()   → Шаардлагатай бүх tab, гарчиг, trigger-ийг үүсгэнэ (нэг удаа)
  *
  * Тохиргоог доорх CONFIG дотроос л засна.
  */
 
 const CONFIG = {
+  timeZone: 'Asia/Ulaanbaatar',          // захиалгын огноо энэ бүсээр бичигдэнэ
   orderPrefix: 'SS-',
   notifyEvery: 10,                       // хэдэн захиалга тутамд имэйл илгээх
   notifyEmail: 'Ariunbold.agency@gmail.com',
@@ -33,16 +33,71 @@ const CONFIG = {
 const SHEETS = {
   products: 'Products',
   categories: 'Categories',
+  bundles: 'Bundles',
   reviews: 'Reviews',
   orders: 'Orders',
-  archive: 'Archive'
+  archive: 'Archive',
+  guide: 'Заавар'
 };
 
-// Products хуудсанд хожим нэмэгдсэн баганууд
-const EXTRA_PRODUCT_COLS = ['colorImages', 'sizeImages', 'sizePrices'];
+/* Products хуудасны багана — холбоотой талбарууд зэрэгцэж байхаар эрэмбэлсэн.
+   setup() ажиллах бүрд хуудсыг энэ дараалалд оруулна. */
+const PRODUCT_COLS = [
+  'slug', 'category', 'name', 'desc',
+  'price', 'discount',
+  'sizes', 'sizePrices',
+  'colors', 'colorImages', 'sizeImages',
+  'image1', 'image2', 'image3', 'image4', 'image5',
+  'stock', 'active'
+];
 
-// Шинэ багана нэмэхдээ ЗӨВХӨН төгсгөлд нь нэмнэ — дунд нь оруулбал аль
-// хэдийн бичигдсэн мөрүүд баганаасаа хазайна.
+const PRODUCT_NOTES = {
+  slug: 'Барааны богино нэр. Латинаар, зайгүй, зурааснаас өөр тэмдэггүй.\nЖишээ: chako-thermos\nДавхардаж болохгүй.',
+  category: 'Аль категорид харьяалагдах. Categories хуудасны slug-тай яг таарна.\nЖишээ: undaanii-sav',
+  name: 'Сайт дээр харагдах нэр.\nЖишээ: Chako Lab термос аяга',
+  desc: 'Богино тайлбар. 1-2 өгүүлбэр.',
+  price: 'Үндсэн үнэ, зөвхөн тоо (₮ бичихгүй).\nЖишээ: 45900\nХэмжээ бүр өөр үнэтэй бол sizePrices-ыг ашиглана.',
+  discount: 'Хямдралын ХУВЬ, зөвхөн тоо.\nЖишээ: 20  →  20% хямдарна.\nХоосон бол хямдрал огт харагдахгүй.',
+  sizes: 'Хэмжээнүүд, таслалаар тусгаарлана.\nЖишээ: 350мл, 500мл\nХоосон бол хэмжээ сонгох хэсэг гарахгүй.',
+  sizePrices: 'Хэмжээ бүрийн үнэ, sizes-тэй ЯГ ИЖИЛ дараалалтай.\nЖишээ: sizes = 350мл, 500мл\n        sizePrices = 45900, 62900\nХоосон бол бүх хэмжээнд price баганын үнэ хэрэглэгдэнэ.',
+  colors: 'Өнгөнүүд, таслалаар тусгаарлана.\nЖишээ: Шар, Ягаан, Цэнхэр\nХоосон бол өнгө сонгох хэсэг гарахгүй.',
+  colorImages: 'Өнгө бүрийн зураг, colors-тэй ЯГ ИЖИЛ дараалалтай.\nӨнгө дархад галерей тэр зураг руу үсэрнэ.\nХоосон бол зураг солигдохгүй.',
+  sizeImages: 'Хэмжээ бүрийн зураг, sizes-тэй ижил дараалалтай.\nИхэвчлэн хэрэггүй, хоосон орхиж болно.',
+  image1: 'Үндсэн зураг. Drive-ийн share линк тавьж болно.',
+  image2: 'Нэмэлт зураг (заавал биш).',
+  image3: 'Нэмэлт зураг (заавал биш).',
+  image4: 'Нэмэлт зураг (заавал биш).',
+  image5: 'Нэмэлт зураг (заавал биш).',
+  stock: 'Үлдэгдэл тоо. 5 ба түүнээс бага бол сайт дээр "Үлдсэн Nш" гэж харагдана.',
+  active: 'TRUE = сайт дээр харагдана.\nFALSE = түр нуугдана (устгах шаардлагагүй).'
+};
+
+const CATEGORY_NOTES = {
+  slug: 'Категорийн богино нэр. Латинаар, зайгүй.\nProducts хуудасны category баганад энэ нэрийг бичнэ.',
+  name: 'Сайт дээр харагдах нэр. Хоёр үгтэй бол хоёр мөр болж харагдана.\nЖишээ: УНДААНЫ САВ',
+  image: 'Категорийн зураг. Шинэ категори нэмвэл зургийг боловсруулах хэрэгтэй.',
+  order: 'Харагдах дараалал. 1, 2, 3 ...',
+  active: 'TRUE = харагдана, FALSE = нуугдана.'
+};
+
+const BUNDLE_COLS = ['product', 'qty', 'price', 'label', 'active'];
+const BUNDLE_NOTES = {
+  product: 'Аль барааны багц вэ. Products хуудасны slug-ийг бичнэ.\nЖишээ: chako-thermos',
+  qty: 'Багцад хэдэн ширхэг орох.\nЖишээ: 3',
+  price: 'Багцын НИЙТ үнэ, зөвхөн тоо.\nЖишээ: 99000  (3 ширхэгийн нийт үнэ)',
+  label: 'Сайт дээр гарах тайлбар.\nЖишээ: 2 авбал 1 үнэгүй\nХоосон байж болно.',
+  active: 'TRUE = харагдана, FALSE = нуугдана.'
+};
+
+const REVIEW_NOTES = {
+  product: 'Аль барааны сэтгэгдэл вэ (slug).\nХООСОН орхивол БҮХ бараан дээр харагдана.',
+  name: 'Сэтгэгдэл бичсэн хүний нэр.\nЖишээ: Б.Хулан',
+  text: 'Сэтгэгдлийн текст.',
+  rating: '1-5 хүртэлх од. Хоосон бол од харагдахгүй.',
+  image: 'Screenshot-ын зураг (Drive линк). Хоосон байж болно.',
+  active: 'TRUE = харагдана, FALSE = нуугдана.'
+};
+
 const ORDER_HEADERS = [
   'Огноо', 'Захиалгын код', 'Нэр', 'Утас', 'Хаяг',
   'Бараа', 'Өнгө', 'Хэмжээ', 'Тоо',
@@ -51,119 +106,171 @@ const ORDER_HEADERS = [
 ];
 
 /* ====================================================================
-   SETUP — нэг удаа ажиллуулна
+   SETUP — дахин ажиллуулахад аюулгүй
    ==================================================================== */
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) {
-    throw new Error(
-      'Sheet олдсонгүй. Энэ скриптийг Sheet дотроос Extensions → Apps Script гэж нээгээрэй.'
-    );
+    throw new Error('Sheet олдсонгүй. Sheet дотроос Extensions → Apps Script гэж нээгээрэй.');
   }
 
-  // CSV-ээр орж ирсэн эхний хуудсыг Products болгож нэрлэнэ
+  // Огноо Улаанбаатарын цагаар бичигдэхийн тулд. Үүнгүй бол Google-ийн
+  // үндсэн бүс (Америк) хэрэглэгдэж, захиалгын цаг 15 цагаар хоцордог.
+  ss.setSpreadsheetTimeZone(CONFIG.timeZone);
+
   const first = ss.getSheets()[0];
   if (!ss.getSheetByName(SHEETS.products)) first.setName(SHEETS.products);
 
-  // Categories — байхгүй бол үүсгээд эхлэлийн мөрүүдийг тавина
-  if (!ss.getSheetByName(SHEETS.categories)) {
-    const s = ss.insertSheet(SHEETS.categories);
-    s.getRange(1, 1, 1, 5).setValues([['slug', 'name', 'image', 'order', 'active']]);
-    s.getRange(2, 1, 3, 5).setValues([
-      ['undaanii-sav', 'УНДААНЫ САВ', 'assets/p/bottle-a.jpg', 1, true],
-      ['ger-ahui', 'ГЭР АХУЙ', 'assets/product-clock.png', 2, true],
-      ['duu-hugjim', 'ДУУ ХӨГЖИМ', 'assets/product-turntable.png', 3, true]
-    ]);
-    s.setFrozenRows(1);
-  }
+  ensureSheet_(ss, SHEETS.categories, ['slug', 'name', 'image', 'order', 'active'], [
+    ['undaanii-sav', 'УНДААНЫ САВ', 'assets/p/bottle-a.jpg', 1, true],
+    ['ger-ahui', 'ГЭР АХУЙ', 'assets/product-clock.png', 2, true],
+    ['duu-hugjim', 'ДУУ ХӨГЖИМ', 'assets/product-turntable.png', 3, true]
+  ]);
+  ensureSheet_(ss, SHEETS.bundles, BUNDLE_COLS, []);
+  ensureSheet_(ss, SHEETS.reviews, ['product', 'name', 'text', 'rating', 'image', 'active'], []);
+  ensureSheet_(ss, SHEETS.orders, ORDER_HEADERS, []);
+  ensureSheet_(ss, SHEETS.archive, ORDER_HEADERS, []);
 
-  [SHEETS.orders, SHEETS.archive].forEach(function (name) {
-    if (!ss.getSheetByName(name)) {
-      const s = ss.insertSheet(name);
-      s.getRange(1, 1, 1, ORDER_HEADERS.length).setValues([ORDER_HEADERS]);
-      s.setFrozenRows(1);
-      s.getRange(1, 1, 1, ORDER_HEADERS.length).setFontWeight('bold');
-    }
-  });
+  orderProductColumns_(ss);
+  [SHEETS.orders, SHEETS.archive].forEach(function (n) { syncHeaders_(ss, n, ORDER_HEADERS); });
 
-  // Reviews — сэтгэгдэл. product хоосон бол бүх бараанд харагдана.
-  if (!ss.getSheetByName(SHEETS.reviews)) {
-    const s = ss.insertSheet(SHEETS.reviews);
-    s.getRange(1, 1, 1, 6).setValues([['product', 'name', 'text', 'rating', 'image', 'active']]);
-    s.setFrozenRows(1);
-    s.getRange(1, 1, 1, 6).setFontWeight('bold');
-  }
+  // Тайлбарууд — гарчиг дээр хулгана авчрахад тусламж гарч ирнэ
+  annotate_(ss, SHEETS.products, PRODUCT_NOTES);
+  annotate_(ss, SHEETS.categories, CATEGORY_NOTES);
+  annotate_(ss, SHEETS.bundles, BUNDLE_NOTES);
+  annotate_(ss, SHEETS.reviews, REVIEW_NOTES);
 
-  ss.getSheetByName(SHEETS.products).setFrozenRows(1);
-  addMissingProductColumns_(ss);
-  [SHEETS.orders, SHEETS.archive].forEach(function (n) { syncOrderHeaders_(ss, n); });
+  buildGuide_(ss);
 
-  // 48 цагийн архивлалт — өдөрт 2 удаа
   const has = ScriptApp.getProjectTriggers().some(function (t) {
     return t.getHandlerFunction() === 'archiveOld';
   });
-  if (!has) {
-    ScriptApp.newTrigger('archiveOld').timeBased().everyHours(12).create();
-  }
+  if (!has) ScriptApp.newTrigger('archiveOld').timeBased().everyHours(12).create();
 
-  // Санамж: энд SpreadsheetApp.getUi().alert() хэрэглэж болохгүй. Скриптийг
-  // засварлагчаас Run хийхэд тэр цонх Sheet-ийн таб дээр гарч, хэн ч хариулахгүй
-  // тул скрипт 6 минутын хязгаарт хүртэл гацдаг.
-  Logger.log('Бэлэн боллоо. Tab-ууд: ' + ss.getSheets().map(function (s) {
-    return s.getName();
-  }).join(', '));
-  Logger.log('Дараа нь Deploy → New deployment → Web app хийнэ үү.');
+  Logger.log('Бэлэн. Хуудсууд: ' + ss.getSheets().map(function (s) { return s.getName(); }).join(', '));
+  Logger.log('Цагийн бүс: ' + ss.getSpreadsheetTimeZone());
+}
+
+function upgrade() { setup(); }
+
+function ensureSheet_(ss, name, headers, rows) {
+  let s = ss.getSheetByName(name);
+  if (!s) {
+    s = ss.insertSheet(name);
+    s.getRange(1, 1, 1, headers.length).setValues([headers]);
+    if (rows.length) s.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+  s.setFrozenRows(1);
+  s.getRange(1, 1, 1, Math.max(headers.length, s.getLastColumn()))
+    .setFontWeight('bold')
+    .setBackground('#1c1c1c')
+    .setFontColor('#ffffff');
+  return s;
+}
+
+/** Гарчиг дээр тайлбар (hover note) тавина. */
+function annotate_(ss, sheetName, notes) {
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet || sheet.getLastColumn() < 1) return;
+  const width = sheet.getLastColumn();
+  const head = sheet.getRange(1, 1, 1, width).getValues()[0];
+  head.forEach(function (h, i) {
+    const key = String(h).trim();
+    if (notes[key]) sheet.getRange(1, i + 1).setNote(notes[key]);
+  });
 }
 
 /**
- * Products хуудсанд дутуу баганыг төгсгөлд нь нэмнэ. Аль хэдийн өгөгдөл
- * оруулсан хуудсыг эвдэхгүйгээр шинэ талбар нэмэх зам.
+ * Products хуудсыг PRODUCT_COLS дараалалд оруулна. Танихгүй багана байвал
+ * төгсгөлд нь хэвээр үлдээнэ — гараар нэмсэн зүйл алдагдахгүй.
  */
-function addMissingProductColumns_(ss) {
+function orderProductColumns_(ss) {
   const sheet = ss.getSheetByName(SHEETS.products);
-  const width = sheet.getLastColumn();
-  const head = sheet.getRange(1, 1, 1, width).getValues()[0].map(function (h) {
-    return String(h).trim();
+  const lastCol = sheet.getLastColumn();
+  const lastRow = Math.max(1, sheet.getLastRow());
+  if (lastCol < 1) return;
+
+  const values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  const head = values[0].map(function (h) { return String(h).trim(); });
+
+  const extras = head.filter(function (h) {
+    return h && PRODUCT_COLS.indexOf(h) === -1;
   });
-  EXTRA_PRODUCT_COLS.forEach(function (name) {
-    if (head.indexOf(name) === -1) {
-      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(name);
-    }
+  const target = PRODUCT_COLS.concat(extras);
+
+  // Аль хэдийн зөв дараалалтай бол хөндөхгүй
+  if (head.length === target.length && head.every(function (h, i) { return h === target[i]; })) return;
+
+  const rebuilt = values.map(function (row, r) {
+    return target.map(function (col) {
+      if (r === 0) return col;
+      const idx = head.indexOf(col);
+      return idx === -1 ? '' : row[idx];
+    });
   });
+
+  sheet.clear();
+  sheet.getRange(1, 1, rebuilt.length, target.length).setValues(rebuilt);
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, target.length)
+    .setFontWeight('bold').setBackground('#1c1c1c').setFontColor('#ffffff');
 }
 
-/** Orders/Archive-д дутуу гарчгийг төгсгөлд нь нэмнэ. */
-function syncOrderHeaders_(ss, name) {
+function syncHeaders_(ss, name, headers) {
   const sheet = ss.getSheetByName(name);
   if (!sheet) return;
   const width = Math.max(1, sheet.getLastColumn());
   const head = sheet.getRange(1, 1, 1, width).getValues()[0].map(function (h) {
     return String(h).trim();
   });
-  ORDER_HEADERS.forEach(function (h) {
+  headers.forEach(function (h) {
     if (head.indexOf(h) === -1) {
       sheet.getRange(1, sheet.getLastColumn() + 1).setValue(h).setFontWeight('bold');
     }
   });
 }
 
-/** Аль хэдийн setup хийсэн хүн шинэ багана/хуудсыг авахын тулд ажиллуулна. */
-function upgrade() {
-  setup();
+/** Заавар хуудас — багана бүрийг юу гэж бөглөхийг бичсэн лавлах. */
+function buildGuide_(ss) {
+  let s = ss.getSheetByName(SHEETS.guide);
+  if (!s) s = ss.insertSheet(SHEETS.guide);
+  s.clear();
+
+  const rows = [['ХУУДАС', 'БАГАНА', 'ЮУ БИЧИХ', 'ЖИШЭЭ']];
+  const push = function (sheetName, notes, cols) {
+    cols.forEach(function (c) {
+      if (!notes[c]) return;
+      const lines = notes[c].split('\n');
+      rows.push([sheetName, c, lines[0], lines.slice(1).join(' ')]);
+    });
+  };
+  push('Products', PRODUCT_NOTES, PRODUCT_COLS);
+  push('Categories', CATEGORY_NOTES, ['slug', 'name', 'image', 'order', 'active']);
+  push('Bundles', BUNDLE_NOTES, BUNDLE_COLS);
+  push('Reviews', REVIEW_NOTES, ['product', 'name', 'text', 'rating', 'image', 'active']);
+
+  s.getRange(1, 1, rows.length, 4).setValues(rows);
+  s.setFrozenRows(1);
+  s.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#1c1c1c').setFontColor('#ffffff');
+  s.setColumnWidth(1, 110);
+  s.setColumnWidth(2, 120);
+  s.setColumnWidth(3, 420);
+  s.setColumnWidth(4, 300);
+  s.getRange(2, 1, rows.length - 1, 4).setVerticalAlignment('top').setWrap(true);
 }
 
 /* ====================================================================
-   READ — каталогийг JSON болгож өгнө
+   READ
    ==================================================================== */
 function doGet() {
-  const data = {
-    shop: CONFIG.shop,
-    categories: readCategories(),
-    products: readProducts(),
-    reviews: readReviews()
-  };
   return ContentService
-    .createTextOutput(JSON.stringify(data))
+    .createTextOutput(JSON.stringify({
+      shop: CONFIG.shop,
+      categories: readCategories(),
+      products: readProducts(),
+      bundles: readBundles(),
+      reviews: readReviews()
+    }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -183,6 +290,13 @@ function rowsOf(sheetName) {
 function truthy(v) {
   const s = String(v).trim().toLowerCase();
   return s === 'true' || s === 'yes' || s === '1' || s === 'тийм' || s === '';
+}
+
+function splitList(v) {
+  return String(v || '')
+    .split(',')
+    .map(function (s) { return s.trim(); })
+    .filter(function (s) { return s !== ''; });
 }
 
 function readCategories() {
@@ -218,14 +332,26 @@ function readProducts() {
         price: Number(r.price) || 0,
         discount: d === '' ? null : Number(d),
         images: images,
-        colors: splitList(r.colors),
         sizes: splitList(r.sizes),
-        // сонголт бүрт харгалзах зураг, үнэ; colors/sizes-тэй ижил дараалалтай
+        sizePrices: splitList(r.sizePrices).map(Number),
+        colors: splitList(r.colors),
         colorImages: splitList(r.colorImages),
         sizeImages: splitList(r.sizeImages),
-        sizePrices: splitList(r.sizePrices).map(Number),
         stock: Number(r.stock) || 0,
         active: true
+      };
+    });
+}
+
+function readBundles() {
+  return rowsOf(SHEETS.bundles)
+    .filter(function (r) { return r.product && Number(r.qty) > 1 && truthy(r.active); })
+    .map(function (r) {
+      return {
+        product: String(r.product).trim(),
+        qty: Number(r.qty),
+        price: Number(r.price) || 0,
+        label: String(r.label || '').trim()
       };
     });
 }
@@ -235,7 +361,7 @@ function readReviews() {
     .filter(function (r) { return (r.text || r.image) && truthy(r.active); })
     .map(function (r) {
       return {
-        product: String(r.product || '').trim(),   // хоосон бол бүх бараанд
+        product: String(r.product || '').trim(),
         name: String(r.name || '').trim(),
         text: String(r.text || '').trim(),
         rating: Number(r.rating) || 0,
@@ -244,28 +370,21 @@ function readReviews() {
     });
 }
 
-function splitList(v) {
-  return String(v || '')
-    .split(',')
-    .map(function (s) { return s.trim(); })
-    .filter(function (s) { return s !== ''; });
-}
-
 /* ====================================================================
-   WRITE — захиалга хүлээж авна
+   WRITE
    ==================================================================== */
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000); // дугаар давхцахаас сэргийлнэ
   try {
     const body = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEETS.orders);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.orders);
 
     const code = nextOrderCode(sheet);
     const qty = Number(body.qty) || 1;
     const unit = Number(body.price) || 0;
     const ship = Number(body.delivery) || 0;
+    const total = Number(body.total) || unit * qty + ship;
 
     sheet.appendRow([
       new Date(),
@@ -279,7 +398,7 @@ function doPost(e) {
       qty,
       unit,
       ship,
-      unit * qty + ship,
+      total,
       String(body.payment || ''),
       'Шинэ',
       String(body.phone2 || '')
@@ -314,7 +433,7 @@ function json(obj) {
 }
 
 /* ====================================================================
-   NOTIFY — N захиалга тутамд имэйл
+   NOTIFY
    ==================================================================== */
 function notifyBatch(sheet, count) {
   const n = CONFIG.notifyEvery;
@@ -327,14 +446,8 @@ function notifyBatch(sheet, count) {
     + '</tr>';
 
   rows.forEach(function (r) {
-    html += '<tr>'
-      + '<td>' + r[1] + '</td>'
-      + '<td>' + r[2] + '</td>'
-      + '<td>' + r[3] + '</td>'
-      + '<td>' + r[5] + '</td>'
-      + '<td>' + r[8] + '</td>'
-      + '<td>' + r[11] + '₮</td>'
-      + '</tr>';
+    html += '<tr><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td>'
+      + '<td>' + r[5] + '</td><td>' + r[8] + '</td><td>' + r[11] + '₮</td></tr>';
   });
   html += '</table>';
 
@@ -371,7 +484,5 @@ function archiveOld() {
 
   archive.getRange(archive.getLastRow() + 1, 1, move.length, ORDER_HEADERS.length).setValues(move);
   orders.getRange(2, 1, values.length, ORDER_HEADERS.length).clearContent();
-  if (keep.length) {
-    orders.getRange(2, 1, keep.length, ORDER_HEADERS.length).setValues(keep);
-  }
+  if (keep.length) orders.getRange(2, 1, keep.length, ORDER_HEADERS.length).setValues(keep);
 }

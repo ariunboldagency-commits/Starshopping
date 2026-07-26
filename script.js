@@ -12,7 +12,7 @@ const DATA_SOURCE =
   "https://script.google.com/macros/s/AKfycbxgZXinsMEqVuUl_kysPwSx136wbZhlLaT0emmy7TvOVP96PiUV7f-4QYU6ni-0Dl41/exec";
 const DATA_FALLBACK = "data/catalog.json";
 
-let DB = { shop: {}, categories: [], products: [], reviews: [] };
+let DB = { shop: {}, categories: [], products: [], bundles: [], reviews: [] };
 
 /* Sheets get pasted full of Google Drive share links rather than direct
    image URLs, so normalise those into something an <img> can actually load. */
@@ -64,6 +64,8 @@ const productsIn = (slug) => DB.products.filter((p) => p.active !== false && p.c
 const categoryBy = (slug) => DB.categories.find((c) => c.slug === slug);
 const productBy = (slug) => DB.products.find((p) => p.slug === slug);
 const reviewsFor = (slug) => DB.reviews.filter((r) => !r.product || r.product === slug);
+const bundlesFor = (slug) =>
+  DB.bundles.filter((b) => b.product === slug && b.qty > 1 && b.price > 0).sort((a, b) => a.qty - b.qty);
 
 /* ========================================================================
    IMAGE FRAMES
@@ -343,6 +345,7 @@ function renderProduct(slug) {
   // price follows the selected size when the sheet gives one per size
   const priceForSize = (i) => (sizePrices[i] > 0 ? sizePrices[i] : Number(p.price));
   let pr = priceOf(p, sizes.length ? priceForSize(0) : p.price);
+  const bundles = bundlesFor(p.slug);
   const cat = categoryBy(p.category);
   const revs = reviewsFor(p.slug);
 
@@ -427,13 +430,19 @@ function renderProduct(slug) {
         ${sizes.map((s, i) => `<button class="chip${i === 0 ? " is-active" : ""}" data-i="${i}">${esc(s)}</button>`).join("")}
       </div></div>` : ""}
 
-    <div class="opt"><span class="opt__label">ТОО ШИРХЭГ</span>
-      <div class="qty">
-        <button class="qty__btn" data-step="-1">−</button>
-        <span class="qty__val" id="qtyVal">1</span>
-        <button class="qty__btn" data-step="1">+</button>
-      </div>
-    </div>
+    ${
+      bundles.length
+        ? `<div class="opt"><span class="opt__label">БАГЦ СОНГОХ</span>
+             <div class="packs" id="packs"></div>
+           </div>`
+        : `<div class="opt"><span class="opt__label">ТОО ШИРХЭГ</span>
+             <div class="qty">
+               <button class="qty__btn" data-step="-1">−</button>
+               <span class="qty__val" id="qtyVal">1</span>
+               <button class="qty__btn" data-step="1">+</button>
+             </div>
+           </div>`
+    }
 
     <a class="buy" href="#" id="buyBtn">
       <span class="buy__total" id="buyTotal"></span>
@@ -458,13 +467,61 @@ function renderProduct(slug) {
   const buyTotal = right.querySelector("#buyTotal");
   const priceBox = right.querySelector("#pdpPrices");
 
+  /* A bundle is a fixed total for a fixed count, so once one is chosen it
+     overrides the per-unit maths entirely. `pack === null` means the plain
+     single-unit path with the quantity stepper. */
+  let pack = null;
+  const packsBox = right.querySelector("#packs");
+
+  const orderTotal = () => (pack ? pack.price : pr.now * qty);
+
+  const renderPacks = () => {
+    if (!packsBox) return;
+    const single = { qty: 1, price: pr.now, label: "" };
+    packsBox.innerHTML = [single, ...bundles]
+      .map((b, i) => {
+        const per = Math.round(b.price / b.qty);
+        const saved = pr.now * b.qty - b.price;
+        const pct = Math.round((saved / (pr.now * b.qty)) * 100);
+        const active = (pack === null && i === 0) || (pack && pack.qty === b.qty);
+        return `<button class="pack${active ? " is-active" : ""}" data-i="${i}">
+            <span class="pack__dot"></span>
+            <span class="pack__body">
+              <span class="pack__qty">${b.qty} ширхэг</span>
+              ${b.label ? `<span class="pack__label">${esc(b.label)}</span>` : ""}
+              ${b.qty > 1 ? `<span class="pack__per">${money(per)} / ширхэг</span>` : ""}
+            </span>
+            <span class="pack__right">
+              <span class="pack__price">${money(b.price)}</span>
+              ${saved > 0 && pct > 0 ? `<span class="pack__save">${pct}% хэмнэнэ</span>` : ""}
+            </span>
+          </button>`;
+      })
+      .join("");
+
+    packsBox.querySelectorAll(".pack").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const i = Number(btn.dataset.i);
+        pack = i === 0 ? null : bundles[i - 1];
+        qty = pack ? pack.qty : 1;
+        renderPacks();
+        refreshTotalLine();
+      })
+    );
+  };
+
+  const refreshTotalLine = () => {
+    buyTotal.textContent = `${qty} ширхэг · ${money(orderTotal())}`;
+  };
+
   const refreshPrice = () => {
     pr = priceOf(p, sizeIdx >= 0 ? priceForSize(sizeIdx) : p.price);
     priceBox.innerHTML = `
       <span class="price-now">${money(pr.now)}</span>
       ${pr.on ? `<span class="price-was">${money(pr.was)}</span>` : ""}
       ${pr.on ? `<span class="tag">-${pr.pct}%</span>` : ""}`;
-    buyTotal.textContent = `${qty} ширхэг · ${money(pr.now * qty)}`;
+    renderPacks();
+    refreshTotalLine();
   };
   refreshPrice();
 
@@ -489,15 +546,26 @@ function renderProduct(slug) {
   right.querySelectorAll(".qty__btn").forEach((b) =>
     b.addEventListener("click", () => {
       qty = Math.max(1, qty + Number(b.dataset.step));
-      qtyVal.textContent = String(qty);
-      refreshPrice();
+      if (qtyVal) qtyVal.textContent = String(qty);
+      refreshTotalLine();
     })
   );
 
   right.querySelector("#buyBtn").addEventListener("click", (e) => {
     e.preventDefault();
-    setDraft({ slug: p.slug, name: p.name, image: (p.images[0] || ""), unit: pr.now, qty, color, size });
-    if (window.fbq) fbq("track", "InitiateCheckout", { content_name: p.name, value: pr.now * qty, currency: "MNT" });
+    setDraft({
+      slug: p.slug,
+      name: p.name,
+      image: p.images[0] || "",
+      unit: pack ? Math.round(pack.price / pack.qty) : pr.now,
+      qty,
+      goods: orderTotal(),
+      pack: pack ? pack.label || `${pack.qty} ширхэгийн багц` : "",
+      color,
+      size,
+    });
+    if (window.fbq)
+      fbq("track", "InitiateCheckout", { content_name: p.name, value: orderTotal(), currency: "MNT" });
     location.hash = "#/order";
   });
 
@@ -566,6 +634,7 @@ function renderOrder() {
             <div class="sum__name">${esc(d.name)}</div>
             <div class="sum__meta">
               ${d.color ? esc(d.color) + " · " : ""}${d.size ? esc(d.size) + " · " : ""}${d.qty} ширхэг
+              ${d.pack ? `<span class="sum__pack">${esc(d.pack)}</span>` : ""}
             </div>
           </div>
         </div>
@@ -659,7 +728,8 @@ function renderOrder() {
   let shipName = ship[0].name;
   let payment = "Хүргэлтээр төлөх";
 
-  const goods = d.unit * d.qty;
+  // a bundle carries its own fixed total, so trust it over unit × qty
+  const goods = Number(d.goods) || d.unit * d.qty;
   const tGoods = page.querySelector("#tGoods");
   const tShip = page.querySelector("#tShip");
   const tAll = page.querySelector("#tAll");
@@ -737,8 +807,9 @@ function renderOrder() {
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           name, phone, phone2, address: addr,
-          product: d.name, color: d.color, size: d.size,
-          qty: d.qty, price: d.unit,
+          product: d.name + (d.pack ? ` (${d.pack})` : ""),
+          color: d.color, size: d.size,
+          qty: d.qty, price: d.unit, total: goods + shipPrice,
           delivery: shipPrice, deliveryName: shipName,
           payment,
         }),
@@ -1086,6 +1157,7 @@ loadCatalog()
       shop: data.shop || {},
       categories: data.categories || [],
       products: (data.products || []).map((p) => ({ ...p, images: listOf(p.images) })),
+      bundles: data.bundles || [],
       reviews: data.reviews || [],
     };
     renderCategories();
