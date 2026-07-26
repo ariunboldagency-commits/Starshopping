@@ -33,9 +33,13 @@ const CONFIG = {
 const SHEETS = {
   products: 'Products',
   categories: 'Categories',
+  reviews: 'Reviews',
   orders: 'Orders',
   archive: 'Archive'
 };
+
+// Products хуудсанд хожим нэмэгдсэн баганууд
+const EXTRA_PRODUCT_COLS = ['colorImages', 'sizeImages'];
 
 const ORDER_HEADERS = [
   'Огноо', 'Захиалгын код', 'Нэр', 'Утас', 'Хаяг',
@@ -79,7 +83,16 @@ function setup() {
     }
   });
 
+  // Reviews — сэтгэгдэл. product хоосон бол бүх бараанд харагдана.
+  if (!ss.getSheetByName(SHEETS.reviews)) {
+    const s = ss.insertSheet(SHEETS.reviews);
+    s.getRange(1, 1, 1, 6).setValues([['product', 'name', 'text', 'rating', 'image', 'active']]);
+    s.setFrozenRows(1);
+    s.getRange(1, 1, 1, 6).setFontWeight('bold');
+  }
+
   ss.getSheetByName(SHEETS.products).setFrozenRows(1);
+  addMissingProductColumns_(ss);
 
   // 48 цагийн архивлалт — өдөрт 2 удаа
   const has = ScriptApp.getProjectTriggers().some(function (t) {
@@ -98,6 +111,28 @@ function setup() {
   Logger.log('Дараа нь Deploy → New deployment → Web app хийнэ үү.');
 }
 
+/**
+ * Products хуудсанд дутуу баганыг төгсгөлд нь нэмнэ. Аль хэдийн өгөгдөл
+ * оруулсан хуудсыг эвдэхгүйгээр шинэ талбар нэмэх зам.
+ */
+function addMissingProductColumns_(ss) {
+  const sheet = ss.getSheetByName(SHEETS.products);
+  const width = sheet.getLastColumn();
+  const head = sheet.getRange(1, 1, 1, width).getValues()[0].map(function (h) {
+    return String(h).trim();
+  });
+  EXTRA_PRODUCT_COLS.forEach(function (name) {
+    if (head.indexOf(name) === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(name);
+    }
+  });
+}
+
+/** Аль хэдийн setup хийсэн хүн шинэ багана/хуудсыг авахын тулд ажиллуулна. */
+function upgrade() {
+  setup();
+}
+
 /* ====================================================================
    READ — каталогийг JSON болгож өгнө
    ==================================================================== */
@@ -105,7 +140,8 @@ function doGet() {
   const data = {
     shop: CONFIG.shop,
     categories: readCategories(),
-    products: readProducts()
+    products: readProducts(),
+    reviews: readReviews()
   };
   return ContentService
     .createTextOutput(JSON.stringify(data))
@@ -165,8 +201,25 @@ function readProducts() {
         images: images,
         colors: splitList(r.colors),
         sizes: splitList(r.sizes),
+        // сонголт бүрт харгалзах зураг; colors/sizes-тэй ижил дараалалтай
+        colorImages: splitList(r.colorImages),
+        sizeImages: splitList(r.sizeImages),
         stock: Number(r.stock) || 0,
         active: true
+      };
+    });
+}
+
+function readReviews() {
+  return rowsOf(SHEETS.reviews)
+    .filter(function (r) { return (r.text || r.image) && truthy(r.active); })
+    .map(function (r) {
+      return {
+        product: String(r.product || '').trim(),   // хоосон бол бүх бараанд
+        name: String(r.name || '').trim(),
+        text: String(r.text || '').trim(),
+        rating: Number(r.rating) || 0,
+        image: String(r.image || '').trim()
       };
     });
 }

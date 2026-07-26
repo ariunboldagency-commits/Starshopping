@@ -51,31 +51,22 @@ src="https://www.facebook.com/tr?id=1673931670377637&ev=PageView&noscript=1"/></
 
   <!-- ============================ HOME ============================ -->
   <div class="view" id="viewHome">
-
-    <!-- hero: type woven with the camera, scroll flies into the lens -->
     <section class="hero" id="hero">
       <div class="hero__inner">
         <span class="hero__word hero__word--back" style="--chars:4">STAR</span>
-
         <div class="hero__cam">
           <img src="assets/hero-camera.png" alt="Онцлох бүтээгдэхүүн — камер">
         </div>
-
         <span class="hero__word hero__word--front" style="--chars:8">SHOPPING</span>
-
         <div class="hero__veil"></div>
       </div>
-
       <span class="hero__cue">доош гүйлгэнэ үү</span>
     </section>
 
-    <!-- categories emerge out of the darkness: name left, product right -->
     <section class="cats" id="cats">
       <div class="cats__emerge">
         <span class="cats__eyebrow">КАТЕГОРИ · <span id="catIndex">01</span> / <span id="catTotal">01</span></span>
-
         <div class="cats__stage" id="catsStage"></div>
-
         <div class="cats__nav">
           <div class="cats__arrows">
             <button class="arrow" data-dir="-1" aria-label="Өмнөх категори">
@@ -89,7 +80,6 @@ src="https://www.facebook.com/tr?id=1673931670377637&ev=PageView&noscript=1"/></
         </div>
       </div>
     </section>
-
   </div>
 
   <!-- ========================== CATEGORY ========================== -->
@@ -107,7 +97,42 @@ src="https://www.facebook.com/tr?id=1673931670377637&ev=PageView&noscript=1"/></
     <div class="page" id="pdp"></div>
   </div>
 
+  <!-- ============================ ORDER ============================ -->
+  <div class="view" id="viewOrder" hidden>
+    <div class="page" id="orderPage"></div>
+  </div>
+
+  <!-- ========================= CONFIRMATION ========================= -->
+  <div class="view" id="viewDone" hidden>
+    <div class="page" id="donePage"></div>
+  </div>
+
+  <!-- =========================== POLICIES =========================== -->
+  <div class="view" id="viewPolicy" hidden>
+    <div class="page" id="policyPage"></div>
+  </div>
+
 </main>
+
+<footer class="foot">
+  <div class="foot__inner">
+    <a class="foot__brand" href="#/">
+      <img src="assets/logo-mark.png" alt="">
+      <span>Starshopping</span>
+    </a>
+    <nav class="foot__links">
+      <a href="#/policy/delivery">Хүргэлтийн нөхцөл</a>
+      <a href="#/policy/refund">Буцаалтын бодлого</a>
+      <a href="#/policy/terms">Үйлчилгээний нөхцөл</a>
+      <a href="#/policy/privacy">Нууцлалын бодлого</a>
+      <a href="#/policy/contact">Холбоо барих</a>
+    </nav>
+    <p class="foot__note">
+      📞 8810-4640 · 9411-4495 &nbsp;·&nbsp; ✉ Ariunbold.agency@gmail.com<br>
+      © <span id="year"></span> Starshopping
+    </p>
+  </div>
+</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
