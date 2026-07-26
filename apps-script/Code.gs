@@ -22,10 +22,12 @@ const CONFIG = {
     holder: 'Аюурзана Ариунболд',
     phones: ['88104640', '94114495'],
     email: 'Ariunbold.agency@gmail.com',
+    // prepaid: тухайн сонголтоор хүргэлтийн ажилтан бэлэн мөнгө авах
+    // боломжгүй тул зөвхөн урьдчилсан шилжүүлэг зөвшөөрөгдөнө
     delivery: [
-      { name: 'Энгийн хүргэлт', price: 6000 },
-      { name: 'Шуурхай хүргэлт', price: 12000 },
-      { name: 'Алслагдсан бүс', price: 8000, priceMax: 12000 }
+      { name: 'Энгийн хүргэлт', price: 6000, note: 'Улаанбаатар хот' },
+      { name: 'Шуурхай хүргэлт', price: 12000, note: 'Улаанбаатар хот' },
+      { name: 'Орон нутаг', price: 6000, note: 'Унаагаар илгээнэ · урьдчилж төлнө', prepaid: true }
     ]
   }
 };
@@ -378,13 +380,18 @@ function doPost(e) {
   lock.waitLock(20000); // дугаар давхцахаас сэргийлнэ
   try {
     const body = JSON.parse(e.postData.contents);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.orders);
 
+    /* Үнийг браузераас ирсэн тоогоор биш, Sheet дээрх бодит өгөгдлөөр
+       дахин бодно. Үгүй бол хэн ч 1₮-ийн захиалга илгээх боломжтой. */
+    const priced = computeOrder_(body);
+    if (!priced.ok) return json({ ok: false, error: priced.error });
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.orders);
     const code = nextOrderCode(sheet);
-    const qty = Number(body.qty) || 1;
-    const unit = Number(body.price) || 0;
-    const ship = Number(body.delivery) || 0;
-    const total = Number(body.total) || unit * qty + ship;
+    const qty = priced.qty;
+    const unit = priced.unit;
+    const ship = priced.ship;
+    const total = priced.total;
 
     sheet.appendRow([
       new Date(),
@@ -413,6 +420,61 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * Захиалгыг Sheet дээрх бодит үнээр бодож, шалгана.
+ * Браузерын явуулсан үнэ, нийт дүнг огт хүлээж авахгүй.
+ */
+function computeOrder_(body) {
+  const slug = String(body.slug || '').trim();
+  const product = readProducts().filter(function (p) { return p.slug === slug; })[0];
+  if (!product) return { ok: false, error: 'Бараа олдсонгүй.' };
+
+  if (!/^\d{8}$/.test(String(body.phone || '').trim())) {
+    return { ok: false, error: 'Утасны дугаар буруу.' };
+  }
+
+  let qty = Math.floor(Number(body.qty) || 1);
+  if (!(qty >= 1 && qty <= 50)) return { ok: false, error: 'Тоо ширхэг буруу.' };
+
+  // хэмжээний үнэ
+  const size = String(body.size || '').trim();
+  let list = product.price;
+  if (size) {
+    const i = product.sizes.indexOf(size);
+    if (i === -1) return { ok: false, error: 'Хэмжээ буруу.' };
+    if (product.sizePrices[i] > 0) list = product.sizePrices[i];
+  }
+
+  const d = Number(product.discount);
+  const unit = d > 0 ? Math.round((list * (1 - d / 100)) / 100) * 100 : list;
+
+  // багц сонгосон бол багцын нийт үнэ давамгайлна
+  let goods = unit * qty;
+  const bundle = readBundles().filter(function (b) {
+    return b.product === slug && b.qty === qty;
+  })[0];
+  if (bundle) goods = bundle.price;
+
+  // хүргэлт — нэрээр нь тохиргооноос олно
+  const opt = CONFIG.shop.delivery.filter(function (o) {
+    return o.name === String(body.deliveryName || '').trim();
+  })[0];
+  if (!opt) return { ok: false, error: 'Хүргэлтийн сонголт буруу.' };
+
+  const payment = String(body.payment || '').trim();
+  if (opt.prepaid && payment !== 'Шилжүүлгээр төлөх') {
+    return { ok: false, error: 'Энэ хүргэлтэд урьдчилсан төлбөр шаардлагатай.' };
+  }
+
+  return {
+    ok: true,
+    qty: qty,
+    unit: bundle ? Math.round(bundle.price / qty) : unit,
+    ship: opt.price,
+    total: goods + opt.price
+  };
 }
 
 function nextOrderCode(sheet) {

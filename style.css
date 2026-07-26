@@ -591,6 +591,23 @@ textarea.input { resize: vertical; min-height: 74px; }
 .pick__sub { font-size: 0.72rem; color: var(--fg-dim); margin-top: 0.1rem; }
 .pick__price { font-weight: 700; font-size: 0.88rem; }
 
+/* an option the chosen delivery route cannot honour */
+.pick__item.is-locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.pick__item.is-locked .pick__dot { border-color: rgba(255, 255, 255, 0.25); }
+
+.pick__lock {
+  margin-top: 0.6rem;
+  border-left: 2px solid #ffb469;
+  padding: 0.15rem 0 0.15rem 0.7rem;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--fg-dim);
+}
+
 .totals {
   border-top: 1px solid var(--line);
   margin-top: 1.4rem; padding-top: 1rem;

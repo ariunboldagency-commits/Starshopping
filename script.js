@@ -450,9 +450,9 @@ function renderProduct(slug) {
     </a>
 
     <div class="trust">
-      <div><b>Хүргэлт</b>Энгийн 6,000₮ · Шуурхай 12,000₮</div>
+      <div><b>Хүргэлт</b>УБ 6,000₮ · Орон нутаг 6,000₮</div>
+      <div><b>Хугацаа</b>Өглөөний 08:00–12:00</div>
       <div><b>Төлбөр</b>Хүргэлтээр эсвэл шилжүүлгээр</div>
-      <div><b>Хугацаа</b>Захиалга баталгаажсаны дараа</div>
       <div><b>Захиалгын код</b>Бүртгэл, хяналттай</div>
     </div>`;
   wrap.appendChild(right);
@@ -619,7 +619,11 @@ function renderOrder() {
 
   const ship = (DB.shop.delivery || []).length
     ? DB.shop.delivery
-    : [{ name: "Энгийн хүргэлт", price: 6000 }, { name: "Шуурхай хүргэлт", price: 12000 }];
+    : [
+        { name: "Энгийн хүргэлт", price: 6000, note: "Улаанбаатар хот" },
+        { name: "Шуурхай хүргэлт", price: 12000, note: "Улаанбаатар хот" },
+        { name: "Орон нутаг", price: 6000, note: "Унаагаар илгээнэ · урьдчилж төлнө", prepaid: true },
+      ];
 
   const page = document.getElementById("orderPage");
   page.innerHTML = `
@@ -644,11 +648,11 @@ function renderOrder() {
           <div class="pick" id="shipPick">
             ${ship
               .map(
-                (s, i) => `<div class="pick__item${i === 0 ? " is-active" : ""}" data-price="${s.price}" data-name="${esc(s.name)}">
+                (s, i) => `<div class="pick__item${i === 0 ? " is-active" : ""}" data-price="${s.price}" data-name="${esc(s.name)}" data-prepaid="${s.prepaid ? "1" : ""}">
                   <span class="pick__dot"></span>
                   <span class="pick__body">
                     <span class="pick__title">${esc(s.name)}</span>
-                    ${s.priceMax ? `<span class="pick__sub">Оператор утсаар баталгаажуулна</span>` : ""}
+                    ${s.note ? `<span class="pick__sub">${esc(s.note)}</span>` : ""}
                   </span>
                   <span class="pick__price">${s.priceMax ? money(s.price) + "–" + money(s.priceMax) : money(s.price)}</span>
                 </div>`
@@ -675,6 +679,10 @@ function renderOrder() {
               </span>
             </div>
           </div>
+          <p class="pick__lock" id="payLock" hidden>
+            Орон нутгийн захиалгыг унаанд тавьж илгээдэг тул хүргэлтийн ажилтан
+            төлбөр авах боломжгүй. Тиймээс урьдчилж шилжүүлнэ.
+          </p>
         </div>
 
         <div class="totals">
@@ -743,21 +751,42 @@ function renderOrder() {
   };
   refresh();
 
+  const payItems = Array.from(page.querySelectorAll("#payPick .pick__item"));
+  const payLock = page.querySelector("#payLock");
+  const cashItem = payItems.find((n) => n.dataset.pay === "Хүргэлтээр төлөх");
+  const transferItem = payItems.find((n) => n.dataset.pay === "Шилжүүлгээр төлөх");
+
+  const selectPayment = (item) => {
+    payItems.forEach((n) => n.classList.toggle("is-active", n === item));
+    payment = item.dataset.pay;
+  };
+
+  /* Some routes hand the parcel to a third-party vehicle, so nobody is there
+     to take cash — those force prepayment rather than letting the customer
+     pick an option that cannot actually be honoured. */
+  const applyPrepaid = (prepaid) => {
+    cashItem.classList.toggle("is-locked", prepaid);
+    payLock.hidden = !prepaid;
+    if (prepaid) selectPayment(transferItem);
+  };
+
   page.querySelector("#shipPick").addEventListener("click", (e) => {
     const item = e.target.closest(".pick__item");
     if (!item) return;
     page.querySelectorAll("#shipPick .pick__item").forEach((n) => n.classList.toggle("is-active", n === item));
     shipPrice = Number(item.dataset.price) || 0;
     shipName = item.dataset.name;
+    applyPrepaid(item.dataset.prepaid === "1");
     refresh();
   });
 
   page.querySelector("#payPick").addEventListener("click", (e) => {
     const item = e.target.closest(".pick__item");
-    if (!item) return;
-    page.querySelectorAll("#payPick .pick__item").forEach((n) => n.classList.toggle("is-active", n === item));
-    payment = item.dataset.pay;
+    if (!item || item.classList.contains("is-locked")) return;
+    selectPayment(item);
   });
+
+  applyPrepaid(Boolean(ship[0] && ship[0].prepaid));
 
   /* ---- submit ---- */
   const btn = page.querySelector("#submitBtn");
@@ -807,10 +836,11 @@ function renderOrder() {
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           name, phone, phone2, address: addr,
+          slug: d.slug,
           product: d.name + (d.pack ? ` (${d.pack})` : ""),
           color: d.color, size: d.size,
-          qty: d.qty, price: d.unit, total: goods + shipPrice,
-          delivery: shipPrice, deliveryName: shipName,
+          qty: d.qty,
+          deliveryName: shipName,
           payment,
         }),
       });
@@ -974,13 +1004,18 @@ const POLICIES = {
     body: `
       <h2>Хүргэлтийн төрөл, төлбөр</h2>
       <ul>
-        <li>Энгийн хүргэлт — 6,000₮</li>
-        <li>Шуурхай хүргэлт — 12,000₮</li>
-        <li>Алслагдсан бүс — 8,000₮–12,000₮ (оператор утсаар баталгаажуулна)</li>
+        <li><b>Энгийн хүргэлт</b> — 6,000₮ (Улаанбаатар хот)</li>
+        <li><b>Шуурхай хүргэлт</b> — 12,000₮ (Улаанбаатар хот)</li>
+        <li><b>Орон нутаг</b> — 6,000₮ (унаагаар илгээнэ)</li>
       </ul>
       <h2>Хугацаа</h2>
-      <p>Захиалга баталгаажсанаас хойш 8–12 цагийн дотор хүргэнэ. Хүргэлтийн ажилтан
-      очихоосоо өмнө таны утсанд заавал холбогдоно.</p>
+      <p>Захиалга баталгаажсаны дараа өглөөний 08:00–12:00 цагийн хооронд хүргэнэ.
+      Хүргэлтийн ажилтан очихоосоо өмнө таны утсанд заавал холбогдоно.</p>
+      <h2>Орон нутгийн захиалга</h2>
+      <p>Орон нутгийн захиалгыг тухайн чиглэлийн унаанд тавьж илгээдэг. Унаанд
+      хүлээлгэж өгсний дараа хүргэлтийн ажилтан төлбөр авах боломжгүй тул
+      <b>орон нутгийн захиалгын төлбөрийг урьдчилан шилжүүлнэ</b>. Унаа хөдөлсний
+      дараа дугаар, цагийг нь утсаар мэдэгдэнэ.</p>
       <h2>Анхаарах</h2>
       <p>Хаяг буруу, эсвэл заасан хугацаанд утсаа авахгүй тохиолдолд хүргэлт хойшлох
       боломжтой. Ийм тохиолдолд дахин хүргэлтийн төлбөр нэмж гарч болно.</p>
@@ -1006,7 +1041,7 @@ const POLICIES = {
       </ul>
       <h2>Буцаан олголт</h2>
       <p>Хүсэлт зөвшөөрөгдсөн тохиолдолд барааг солих, эсвэл төлсөн дүнг таны дансанд
-      3–5 ажлын өдрийн дотор буцаана.</p>
+      1–3 ажлын өдрийн дотор буцаана.</p>
       <h2>Буцаалт хийгдэхгүй</h2>
       <p>Хэрэглэсэн, эвдэрсэн, эсвэл хэрэглэгчийн буруугаас гэмтсэн бараанд буцаалт
       хийгдэхгүй.</p>`,
