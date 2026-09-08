@@ -1,0 +1,52 @@
+From 39f603e3da8e86c62f04984f729174d2c0123e5d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 8 Sep 2026 11:35:39 +0000
+Subject: [PATCH 3/5] Shorten the blank stretch at the end of the hero dive
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Measured on a 390×844 phone: the veil is fully opaque from hero progress
+0.6 to 1.0, and at a pin length of 190% that was 642px of blank cream to
+scroll through before the categories began to emerge — most of a screen of
+nothing, one whole swipe on a phone.
+
+The pin now ends at 130%. The progress-to-scale curve and the veil's
+timings are untouched, so the veil still closes at the same scale — the
+Safari safeguard in CLAUDE.md §3 holds exactly as before (scale 1.91 and
+veil 0.31 at progress 0.45, both runs). Only the scroll per unit of
+progress changed: the blank stretch measures 439px now.
+
+Invariants unchanged at 1280×800, 390×844 and 390×600: scale 11, lens
+offset 0/0, pin gap 0, no console errors.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01EzyC6nrRn89wkcu7EDPwMW
+---
+ script.js | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/script.js b/script.js
+index db8292a..344e21b 100644
+--- a/script.js
++++ b/script.js
+@@ -615,7 +615,15 @@ function buildHomeMotion() {
+       scrollTrigger: {
+         trigger: "#hero",
+         start: "top top",
+-        end: "+=190%",
++        /* How much scroll the dive takes. The progress-to-scale curve and the
++           veil's timing below are untouched by this figure, so the veil still
++           closes at the same scale — what changes is only how far a thumb
++           travels to get there. At 190% the veil was fully opaque from
++           progress 0.6 to 1.0: on a 390×844 phone that was 642px of blank
++           cream before the categories began to emerge, most of a screen of
++           nothing. At 130% the same stretch measures 440px. Below about
++           120% the entry itself starts to feel cut short. */
++        end: "+=130%",
+         scrub: 0.5,
+         pin: true,
+         anticipatePin: 1,
+-- 
+2.43.0
+

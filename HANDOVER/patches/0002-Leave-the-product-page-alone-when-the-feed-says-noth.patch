@@ -1,0 +1,91 @@
+From 26c06a8c8588ec3be502b2d71814d81af2a3233b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 8 Sep 2026 11:35:39 +0000
+Subject: [PATCH 2/5] Leave the product page alone when the feed says nothing
+ new
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The sheet's own catalogue lands five to eight seconds after the page, and
+paint() redrew the product page when it did. By then the gallery had moved
+on to its second or third photo; the redraw rebuilt it from the first, and
+the visitor saw the picture jump back for no reason they could name.
+Measured cold on a phone: the redraw came at 6.6s, index 1 back to 0.
+
+The offline copy and the feed agree almost all of the time — compared today
+they were identical — so almost every one of those jumps was for nothing.
+The page is now redrawn only when the feed would draw it differently: the
+product row, its stock, packs, reviews and the delivery prices are compared
+as one string before and after the catalogue is swapped.
+
+Measured with the feed served from the offline copy: gallery at photo 2
+before the feed, photo 3 after, still rotating, no redraw. With a changed
+price: redrawn, new price on screen, rotation restarted.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01EzyC6nrRn89wkcu7EDPwMW
+---
+ script.js | 38 ++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/script.js b/script.js
+index 9a3c16b..db8292a 100644
+--- a/script.js
++++ b/script.js
+@@ -2148,7 +2148,32 @@ let booted = false;
+    only means the offline copy has not heard of it yet. */
+ let liveLoaded = false;
+ 
++/* Everything the product page draws from the catalogue for one slug, as one
++   string, so two catalogues can be asked whether they would draw the same
++   page. Stock, packs, reviews and the delivery prices are part of that page
++   too, which is why it is not just the product row. */
++function productSnapshot(slug) {
++  if (!DB) return "";
++  return JSON.stringify({
++    p: productBy(slug) || null,
++    stock: availableOf(slug),
++    bundles: bundlesFor(slug),
++    reviews: reviewsFor(slug),
++    shop: DB.shop,
++  });
++}
++
+ function paint(data, { first }) {
++  /* taken before the catalogue is swapped, for the comparison below */
++  const [, pending] = location.hash.replace(/^#\/?/, "").split("/");
++  let before = "";
++  if (!first && pending) {
++    try {
++      before = productSnapshot(decodeURIComponent(pending));
++    } catch (ex) {
++      before = productSnapshot(pending);
++    }
++  }
+   setDB(data);
+   renderCategories();
+   showCat(0);
+@@ -2180,8 +2205,17 @@ function paint(data, { first }) {
+       renderCategory(want);
+       startFrames(views.category);
+     } else if (want && kind === "p" && !views.product.hidden && !pdpTouched) {
+-      renderProduct(want);
+-      startFrames(views.product);
++      /* Only when the sheet says something different about this product.
++         The feed lands five to eight seconds after the page, by which time
++         the gallery has moved on to the second or third photo; a redraw
++         rebuilds it from the first, and the visitor sees the picture jump
++         back for no reason they can name. Measured on the live site: the
++         offline copy and the feed agree almost all of the time, so almost
++         every one of those jumps was for nothing. */
++      if (before !== productSnapshot(want)) {
++        renderProduct(want);
++        startFrames(views.product);
++      }
+     }
+   }
+   // fonts and images landing late can shift a pin's measurements
+-- 
+2.43.0
+

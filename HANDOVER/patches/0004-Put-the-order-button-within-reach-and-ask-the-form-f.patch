@@ -1,0 +1,463 @@
+From 3598ae1faa8704dae92e6613aabf41f613231877 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 8 Sep 2026 11:43:18 +0000
+Subject: [PATCH 4/5] Put the order button within reach and ask the form for
+ less
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Measured on a 390×844 phone: the product page ran 1820px and the ЗАХИАЛАХ
+button sat at 1187px, 1.8 screens below the fold. The order form ran
+1856px with ten boxes, eight of them demanded — entrance and door number
+included, which a ger district or a countryside address does not have, and
+the form stopped there with "fill in Орц".
+
+Product page: a bar fixed to the foot of the screen carries the price and
+ЗАХИАЛАХ while the real button is out of view, and steps aside when it is
+in view (the bar's own band is excluded from that test, or the button would
+surface behind it). It also gives way while the gallery's arrows or dots
+sit in its band — a tap on a dot there would otherwise land on the order
+button; measured on a 390×520 viewport, where the dots start under it. It
+respects the safe-area inset, is not drawn for a sold-out product, and is
+not drawn at all in the wide layout, where the button stays beside the
+photos. Under the button: one line saying how they pay and whom to ring,
+and a "call to order" link on the same number the sheet lists. No Messenger
+link — no Facebook page handle exists anywhere in the sheet, the config or
+the notes; one can be added beside the call link when it does.
+
+Order form: six boxes, three demanded — name, phone, district or sum. City
+and one free line for the rest of the address are optional; the call that
+confirms every order fills in whatever is missing. Name and phone come
+first, then delivery and payment, then the address, and one form wraps
+both columns so Enter and the keyboard's "next" work across all of it. The
+address reaches the sheet as "city, district, rest". Code.gs is untouched:
+computeOrder_ already required only the phone and the slug, and still
+prices the order from the sheet — checked with a stub, a client-sent unit
+of 1 comes back as 119,000.
+
+Measured after: bar on screen at load at 390×844 and 390×600, clear of the
+gallery controls, hidden with the button in view; form 1781px, 6 boxes,
+3 required; empty, name-only and name+phone submissions each name their
+field, and name+phone+district goes through.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01EzyC6nrRn89wkcu7EDPwMW
+---
+ script.js | 206 ++++++++++++++++++++++++++++++++++++++----------------
+ style.css |  65 +++++++++++++++++
+ 2 files changed, 211 insertions(+), 60 deletions(-)
+
+diff --git a/script.js b/script.js
+index 344e21b..5ba7db4 100644
+--- a/script.js
++++ b/script.js
+@@ -56,6 +56,11 @@ const leadNoteOf = (p) => String((p && p.leadNote) || "").trim() || DEFAULT_LEAD
+    quoting the old figure — and the badge never mentioned the express option
+    at all. Both now read the sheet, and only the sheet. */
+ const deliveryOptions = () => (DB.shop.delivery || []).filter((d) => d && d.name);
++/* The number every "call us" on the site rings: the first one the sheet
++   lists, with the one printed in the markup as the fallback. */
++const helpline = () => String(((DB.shop || {}).phones || [])[0] || "88104640").replace(/\D/g, "");
++const fmtPhone = (n) => (/^\d{8}$/.test(n) ? n.slice(0, 4) + "-" + n.slice(4) : n);
++
+ const deliverySummary = () => {
+   const prices = deliveryOptions().map((d) => Number(d.price) || 0);
+   if (!prices.length) return "Захиалга өгөхөд харагдана";
+@@ -805,6 +810,9 @@ function renderCategory(slug) {
+    page is only what the shop guessed from its offline copy and is safe to draw
+    again; afterwards it holds their choices and must be left alone. */
+ let pdpTouched = false;
++/* watches the real order button so the sticky bar can step aside for it;
++   dropped and rebuilt with every product page */
++let pdpObserver = null;
+ 
+ /* The current product gallery's stepper, so the keyboard can reach it without
+    a listener being added per render and never taken away. */
+@@ -918,6 +926,12 @@ function renderProduct(slug) {
+   }
+   setHead(p.name, CARD_SLUG.test(p.slug) ? `/p/${p.slug}/` : "/");
+   pdpTouched = false;
++  if (pdpObserver) {
++    pdpObserver.disconnect();
++    pdpObserver = null;
++  }
++  document.body.classList.remove("has-bar");
++  const helpTel = helpline();
+   pdpNav = null; // reassigned below only when there is a set to step through
+   const colors = listOf(p.colors);
+   const sizes = listOf(p.sizes);
+@@ -1108,7 +1122,11 @@ function renderProduct(slug) {
+         : `<a class="buy" href="#" id="buyBtn">
+              <span class="buy__total" id="buyTotal"></span>
+              <span class="buy__label">ЗАХИАЛАХ</span>
+-           </a>`
++           </a>
++           <p class="assure">Улаанбаатарт хүргэлтээр төлнө · урьдчилгаа шаардахгүй · <a href="tel:${helpTel}">${fmtPhone(helpTel)}</a></p>
++           <div class="alt-order">
++             <a class="alt-order__link" href="tel:${helpTel}">☎ Залгаж захиалах</a>
++           </div>`
+     }
+ 
+     <div class="trust">
+@@ -1217,6 +1235,11 @@ function renderProduct(slug) {
+     // absent when the product is sold out — the button is replaced, not hidden
+     if (!buyTotal) return;
+     buyTotal.textContent = `${qty} ширхэг · ${money(orderTotal())}`;
++    const stickyTotal = pdp.querySelector("#stickyTotal");
++    if (stickyTotal) {
++      stickyTotal.textContent = money(orderTotal());
++      pdp.querySelector(".stickybuy__sub").textContent = `${qty} ширхэг · хүргэлтээр төлнө`;
++    }
+   };
+ 
+   const refreshPrice = () => {
+@@ -1257,8 +1280,8 @@ function renderProduct(slug) {
+     })
+   );
+ 
+-  right.querySelector("#buyBtn")?.addEventListener("click", (e) => {
+-    e.preventDefault();
++  const goOrder = (e) => {
++    if (e) e.preventDefault();
+     setDraft({
+       slug: p.slug,
+       name: p.name,
+@@ -1278,7 +1301,73 @@ function renderProduct(slug) {
+     if (window.fbq)
+       fbq("track", "InitiateCheckout", { content_name: p.name, value: orderTotal(), currency: "MNT" });
+     location.hash = "#/order";
+-  });
++  };
++  const realBtn = right.querySelector("#buyBtn");
++  if (realBtn) realBtn.addEventListener("click", goOrder);
++
++  /* ---- sticky order bar ----
++     The order button sat 1.8 screens down on a phone, below the photos, the
++     description and the options. This keeps the price and the button at the
++     foot of the screen until the real one scrolls into view, then steps
++     aside so there are never two of them. Phones only — the wide layout
++     already keeps the button in sight. Nothing is drawn for a sold-out
++     product: there is nothing to press. */
++  if (realBtn) {
++    const bar = document.createElement("div");
++    bar.className = "stickybuy";
++    bar.id = "stickyBuy";
++    bar.hidden = true;
++    bar.innerHTML = `
++      <div class="stickybuy__price">
++        <span class="stickybuy__total" id="stickyTotal"></span>
++        <span class="stickybuy__sub"></span>
++      </div>
++      <button type="button" class="stickybuy__btn">ЗАХИАЛАХ</button>`;
++    pdp.appendChild(bar);
++    document.body.classList.add("has-bar"); // room under the footer for it
++    bar.querySelector(".stickybuy__btn").addEventListener("click", goOrder);
++    refreshTotalLine();
++
++    if ("IntersectionObserver" in window) {
++      /* The bar itself covers the foot of the viewport, so the button counts
++         as "in view" only once it is clear of that band — otherwise it would
++         surface behind the bar and the bar would vanish before the button
++         could be seen. */
++      bar.hidden = false;
++      const band = bar.offsetHeight;
++      bar.hidden = true;
++      let buttonSeen = false;
++      let controlsUnder = false;
++      const apply = () => { bar.hidden = buttonSeen || controlsUnder; };
++      const buttonWatch = new IntersectionObserver(
++        ([entry]) => { buttonSeen = entry.isIntersecting; apply(); },
++        { threshold: 0.4, rootMargin: `0px 0px -${band}px 0px` }
++      );
++      buttonWatch.observe(realBtn);
++      /* The gallery's arrows and dots pass through that band as the page
++         scrolls. A tap on a dot sitting under the bar would land on the
++         order button instead, so the bar gives way while any of them is
++         there. */
++      const under = new Set();
++      const controlWatch = new IntersectionObserver(
++        (entries) => {
++          entries.forEach((e) => (e.isIntersecting ? under.add(e.target) : under.delete(e.target)));
++          controlsUnder = under.size > 0;
++          apply();
++        },
++        { rootMargin: `-${Math.max(0, innerHeight - band)}px 0px 0px 0px` }
++      );
++      pdp.querySelectorAll(".gnav, .pdp__dots").forEach((c) => controlWatch.observe(c));
++      pdpObserver = {
++        disconnect() {
++          buttonWatch.disconnect();
++          controlWatch.disconnect();
++        },
++      };
++    } else {
++      bar.hidden = false;
++    }
++  }
+ 
+   /* ---- reviews ---- */
+   if (revs.length) {
+@@ -1342,7 +1431,21 @@ function renderOrder() {
+     <a class="back" href="#/p/${esc(encodeURIComponent(d.slug))}">← Бараа руу буцах</a>
+     <h1 class="page__title" style="font-size:clamp(1.8rem,9vw,3rem)">Захиалга</h1>
+ 
+-    <div class="order-grid" style="margin-top:1.6rem">
++    <!-- A real form, not a heap of inputs: Enter sends it, the phone
++         keyboard offers "next" down the fields, and the browser is willing
++         to fill an address it can see belongs together. Validation is left
++         to us — the novalidate flag — because the browser's own warnings arrive in
++         the wrong language and say less than ours do.
++
++         It wraps both columns, so on a phone, where they stack, the order is
++         the one a person taking the order by phone would use: who and which
++         number first, then how to deliver, then where. Only the name, the
++         phone and the district are demanded — the form used to insist on
++         eight boxes, entrance and door number included, which a ger district
++         or a countryside address does not have, and stopped there. The rest
++         of the address is one free line, and the call that confirms every
++         order fills in whatever is missing. -->
++    <form id="orderForm" class="order-grid" novalidate style="margin-top:1.6rem">
+       <div>
+         <div class="sum">
+           <div class="sum__img"><img src="${photoSrc(d.image, 400).src}" data-fallback="${esc(photoSrc(d.image, 400).fallback)}" alt="${esc(d.name)}" decoding="async"></div>
+@@ -1355,6 +1458,25 @@ function renderOrder() {
+           </div>
+         </div>
+ 
++        <div class="field">
++          <label class="field__label" for="fName">НЭР</label>
++          <input class="input" id="fName" name="name" type="text" placeholder="Таны нэр" autocomplete="name" required>
++        </div>
++        <div class="grid2">
++          <div class="field">
++            <label class="field__label" for="fPhone">УТАС</label>
++            <input class="input" id="fPhone" name="tel" type="tel" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" placeholder="8 оронтой" autocomplete="tel" required>
++          </div>
++          <div class="field">
++            <!-- Marked optional because it is. It used to be demanded, and had
++                 to differ from the first, while being labelled "additional" and
++                 carrying no required mark — the form asked for the opposite of
++                 what it enforced, and the order stopped there. -->
++            <label class="field__label" for="fPhone2">НЭМЭЛТ УТАС <span class="field__opt">(заавал биш)</span></label>
++            <input class="input" id="fPhone2" name="tel2" type="tel" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" placeholder="8 оронтой" autocomplete="off">
++          </div>
++        </div>
++
+         <div class="field">
+           <span class="field__label">ХҮРГЭЛТИЙН СОНГОЛТ</span>
+           <div class="pick" id="shipPick">
+@@ -1404,52 +1526,24 @@ function renderOrder() {
+             төлбөр авах боломжгүй. Тиймээс урьдчилж шилжүүлнэ.
+           </p>
+         </div>
+-
+-        <div class="totals">
+-          <div class="totals__row"><span>Бараа (${d.qty}ш)</span><span id="tGoods"></span></div>
+-          <div class="totals__row"><span>Хүргэлт</span><span id="tShip"></span></div>
+-          <div class="totals__row totals__row--big"><span>Нийт</span><span id="tAll"></span></div>
+-        </div>
+       </div>
+ 
+       <div>
+-        <!-- A real form, not a heap of inputs: Enter sends it, the phone
+-             keyboard offers "next" down the fields, and the browser is willing
+-             to fill an address it can see belongs together. Validation is left
+-             to us — the novalidate flag — because the browser's own warnings arrive in
+-             the wrong language and say less than ours do. -->
+-        <form id="orderForm" novalidate>
+-        <div class="field">
+-          <label class="field__label" for="fName">НЭР</label>
+-          <input class="input" id="fName" name="name" type="text" placeholder="Таны нэр" autocomplete="name" required>
+-        </div>
+-        <div class="grid2">
+-          <div class="field">
+-            <label class="field__label" for="fPhone">УТАС</label>
+-            <input class="input" id="fPhone" name="tel" type="tel" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" placeholder="8 оронтой" autocomplete="tel" required>
+-          </div>
+-          <div class="field">
+-            <!-- Marked optional because it is. It used to be demanded, and had
+-                 to differ from the first, while being labelled "additional" and
+-                 carrying no required mark — the form asked for the opposite of
+-                 what it enforced, and the order stopped there. -->
+-            <label class="field__label" for="fPhone2">НЭМЭЛТ УТАС <span class="field__opt">(заавал биш)</span></label>
+-            <input class="input" id="fPhone2" name="tel2" type="tel" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" placeholder="8 оронтой" autocomplete="off">
+-          </div>
+-        </div>
+-
+         <span class="field__label">ХҮРГҮҮЛЭХ ХАЯГ</span>
+         <div class="grid2">
+-          <div class="field"><label class="sr-only" for="aCity">Хот / Аймаг</label><input class="input" id="aCity" name="city" type="text" placeholder="Хот / Аймаг" autocomplete="address-level1" required></div>
++          <div class="field"><label class="sr-only" for="aCity">Хот / Аймаг</label><input class="input" id="aCity" name="city" type="text" placeholder="Хот / Аймаг" autocomplete="address-level1"></div>
+           <div class="field"><label class="sr-only" for="aDist">Дүүрэг / Сум</label><input class="input" id="aDist" name="district" type="text" placeholder="Дүүрэг / Сум" autocomplete="address-level2" required></div>
+-          <div class="field"><label class="sr-only" for="aKhoroo">Хороо / Баг</label><input class="input" id="aKhoroo" name="khoroo" type="text" placeholder="Хороо / Баг" autocomplete="address-level3" required></div>
+-          <div class="field"><label class="sr-only" for="aBuilding">Байр / Гудамж</label><input class="input" id="aBuilding" name="building" type="text" placeholder="Байр / Гудамж" autocomplete="address-line1" required></div>
+-          <div class="field"><label class="sr-only" for="aEntrance">Орц</label><input class="input" id="aEntrance" name="entrance" type="text" placeholder="Орц" autocomplete="address-line2" required></div>
+-          <div class="field"><label class="sr-only" for="aDoor">Тоот</label><input class="input" id="aDoor" name="door" type="text" placeholder="Тоот" autocomplete="address-line3" required></div>
+         </div>
+         <div class="field">
+-          <label class="sr-only" for="aExtra">Нэмэлт заавар</label>
+-          <input class="input" id="aExtra" name="note" type="text" placeholder="Нэмэлт заавар (заавал биш)" autocomplete="off">
++          <label class="sr-only" for="aDetail">Хороо, байр, орц, тоот</label>
++          <input class="input" id="aDetail" name="street-address" type="text" placeholder="Хороо, байр, орц, тоот (заавал биш)" autocomplete="street-address">
++        </div>
++        <p class="field__hint">Дүүрэг эсвэл сумаа л бичихэд хангалттай — хаягийн үлдсэнийг утсаар тодруулна.</p>
++
++        <div class="totals">
++          <div class="totals__row"><span>Бараа (${d.qty}ш)</span><span id="tGoods"></span></div>
++          <div class="totals__row"><span>Хүргэлт</span><span id="tShip"></span></div>
++          <div class="totals__row totals__row--big"><span>Нийт</span><span id="tAll"></span></div>
+         </div>
+ 
+         <p class="err" id="formErr"></p>
+@@ -1458,10 +1552,9 @@ function renderOrder() {
+           <span class="buy__total" id="submitTotal"></span>
+           <span class="buy__label">ЗАХИАЛГА БАТАЛГААЖУУЛАХ</span>
+         </button>
+-        <p class="note">Илгээснээр таны захиалгын код үүсэж, бид тантай утсаар холбогдоно.</p>
+-        </form>
++        <p class="note">Илгээснээр таны захиалгын код үүсэж, бид тантай утсаар холбогдож хаяг, хугацааг тодруулна.</p>
+       </div>
+-    </div>`;
++    </form>`;
+ 
+   /* ---- live totals ---- */
+   let shipPrice = Number(ship[0].price) || 0;
+@@ -1599,15 +1692,9 @@ function renderOrder() {
+     const phone = val("fPhone");
+     const phone2 = val("fPhone2");
+ 
+-    // the field id travels with each piece so a complaint can point at it
+-    const parts = [
+-      ["Хот/Аймаг", val("aCity"), "aCity"],
+-      ["Дүүрэг/Сум", val("aDist"), "aDist"],
+-      ["Хороо/Баг", val("aKhoroo"), "aKhoroo"],
+-      ["Байр/Гудамж", val("aBuilding"), "aBuilding"],
+-      ["Орц", val("aEntrance"), "aEntrance"],
+-      ["Тоот", val("aDoor"), "aDoor"],
+-    ];
++    const city = val("aCity");
++    const district = val("aDist");
++    const detail = val("aDetail");
+ 
+     if (!name) return fail("fName", "Нэрээ бичнэ үү.");
+     if (!/^\d{8}$/.test(phone)) return fail("fPhone", "Утасны дугаар 8 оронтой тоо байх ёстой.");
+@@ -1618,14 +1705,12 @@ function renderOrder() {
+     if (phone2 && phone === phone2)
+       return fail("fPhone2", "Нэмэлт утас нь өөр дугаар байх ёстой. Эсвэл хоосон орхино уу.");
+ 
+-    const missing = parts.find(([, v]) => !v);
+-    if (missing) return fail(missing[2], `Хаягийн "${missing[0]}" талбарыг бөглөнө үү.`);
++    if (!district) return fail("aDist", "Дүүрэг эсвэл сумаа бичнэ үү.");
+     clearFail();
+ 
+     // The sheet keeps one row per order, so the address pieces are folded into
+-    // a single readable line for the delivery driver.
+-    const extra = val("aExtra");
+-    const addr = parts.map(([k, v]) => `${k}: ${v}`).join(", ") + (extra ? ` (${extra})` : "");
++    // a single readable line for the delivery driver: city, district, the rest.
++    const addr = [city, district, detail].filter(Boolean).join(", ");
+ 
+     sending = true;
+     btn.disabled = true;
+@@ -2004,6 +2089,7 @@ const routeUnresolved = () => {
+ 
+ function show(name) {
+   Object.entries(views).forEach(([k, el]) => (el.hidden = k !== name));
++  if (name !== "product") document.body.classList.remove("has-bar");
+   railEl.hidden = name !== "home";
+   if (name !== "home") edgeEl.classList.remove("is-shown");
+ }
+diff --git a/style.css b/style.css
+index ce80ced..630f92b 100644
+--- a/style.css
++++ b/style.css
+@@ -759,6 +759,66 @@ button.buy:disabled { opacity: 0.72; cursor: progress; }
+ 
+ .note { margin-top: 1rem; text-align: center; font-size: 0.74rem; line-height: 1.6; color: var(--fg-dim); }
+ 
++/* one line of reassurance under the order button: how they pay, and whom to ring */
++.assure {
++  margin-top: 0.8rem;
++  text-align: center;
++  font-size: 0.72rem;
++  line-height: 1.55;
++  color: var(--fg-dim);
++}
++.assure a { font-weight: 700; color: var(--fg); white-space: nowrap; }
++
++/* the other way to order, for the visitor who would rather talk to someone —
++   quieter than the button, as it must not compete with it */
++.alt-order { margin-top: 0.8rem; display: flex; justify-content: center; gap: 0.6rem; }
++.alt-order__link {
++  display: inline-flex; align-items: center; gap: 0.4rem;
++  border: 1px solid var(--line);
++  border-radius: 999px;
++  padding: 0.6rem 1.1rem;
++  font-size: 0.78rem; font-weight: 700;
++  color: var(--fg);
++  transition: border-color 0.25s ease;
++}
++.alt-order__link:hover { border-color: var(--fg); }
++.alt-order__link:active { transform: scale(0.98); }
++
++/* -------- sticky order bar (phones) --------
++   Fixed to the foot of the screen while the real button is out of sight.
++   Solid, not blurred: a backdrop filter is a per-frame cost on a phone and
++   this is on screen for the whole visit. The padding respects the home
++   indicator on an iPhone so the button is never half under it. */
++.stickybuy {
++  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
++  display: flex; align-items: center; gap: 0.9rem;
++  padding: 0.7rem 1.1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
++  background: rgba(251, 247, 240, 0.97);
++  border-top: 1px solid var(--line);
++  box-shadow: 0 -10px 30px rgba(69, 36, 26, 0.1);
++}
++.stickybuy[hidden] { display: none; }
++.stickybuy__price { display: flex; flex-direction: column; flex: 1; min-width: 0; }
++.stickybuy__total {
++  font-family: var(--font-display);
++  font-weight: 800; font-size: 1.2rem; line-height: 1.1;
++  white-space: nowrap;
++}
++.stickybuy__sub { margin-top: 0.2rem; font-size: 0.68rem; color: var(--fg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++.stickybuy__btn {
++  flex-shrink: 0;
++  background: var(--fg); color: var(--on-fg);
++  border-radius: 999px;
++  padding: 0.85rem 1.5rem;
++  font-family: var(--font-display);
++  font-weight: 800; font-size: 0.95rem; letter-spacing: 0.06em;
++  box-shadow: 0 10px 24px rgba(69, 36, 26, 0.16);
++  transition: transform 0.2s ease;
++}
++.stickybuy__btn:active { transform: scale(0.97); }
++/* so the end of the page, footer included, can scroll out from under the bar */
++body.has-bar { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
++
+ /* -------- reviews -------- */
+ .reviews { margin-top: 2.6rem; }
+ .reviews__head {
+@@ -884,6 +944,8 @@ button.buy:disabled { opacity: 0.72; cursor: progress; }
+ 
+ /* Reads as optional to a person and to a screen reader, without shouting. */
+ .field__opt { font-weight: 600; letter-spacing: 0.04em; text-transform: none; opacity: 0.75; }
++/* under the address block: says out loud that most of it may be left blank */
++.field__hint { margin: -0.3rem 0 1.2rem; font-size: 0.72rem; line-height: 1.5; color: var(--fg-dim); }
+ 
+ /* A placeholder is not a label: it disappears the moment someone types and a
+    screen reader may never announce it. These name each address box without
+@@ -1236,6 +1298,9 @@ textarea.input { resize: vertical; min-height: 74px; }
+   .buy { max-width: 420px; }
+   .trust { grid-template-columns: repeat(4, 1fr); }
+   .order-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
++  /* the wide layout keeps the button beside the photos; no bar needed */
++  .stickybuy { display: none; }
++  body.has-bar { padding-bottom: 0; }
+ }
+ 
+ /* In-app browsers (Instagram, Facebook) keep their own chrome on screen, so
+-- 
+2.43.0
+
