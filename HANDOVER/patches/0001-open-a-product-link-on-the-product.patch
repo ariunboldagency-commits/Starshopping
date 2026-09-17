@@ -1,0 +1,111 @@
+From e0f4abcd6852f99f17f5efe8ba9cd0fab6cbec7f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 8 Sep 2026 10:46:46 +0000
+Subject: [PATCH] Open a product link on the product, not the hero
+
+A link to a product used to open on the front page and stay there until the
+catalogue arrived: every view but the home one is hidden in the markup, and
+nothing hid it until script.js and data/catalog.json had both come down.
+Measured on a phone over a Fast 3G line, cold: the hero was on screen from
+first paint until 3.2s, then the product appeared. The visitor a reel sends
+has no stored copy, so this was the common case, not the edge.
+
+Two inline scripts now settle the screen before anything is painted. The one
+in the head reads the address and stamps the route on the root element,
+issuing the hero preload only for the front door; it sits above the
+stylesheet on purpose, because a script below it waits for the sheet and the
+preload went out 780ms late. The one at the foot of main hides the home view
+and shows the product skeleton, the same one renderPending draws.
+
+The hero photograph is marked lazy so a hidden home view never fetches its
+224KB on a product link. On the front door the preload still brings it in at
+the same moment as before: 631ms against 618ms, Fast 3G, two runs each.
+
+Zoom invariants unchanged at 1280x800, 390x844 and 390x600: scale 11, lens
+centred to the pixel, pin gap 0.
+---
+ index.html | 47 +++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 45 insertions(+), 2 deletions(-)
+
+diff --git a/index.html b/index.html
+index 79f759d..4ce21cd 100644
+--- a/index.html
++++ b/index.html
+@@ -4,6 +4,28 @@
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+ <meta name="theme-color" content="#fbf7f0">
++<script>
++/* Which screen this address asks for, decided before anything is painted.
++   Every view but the home one is hidden in the markup, so a product link used
++   to open on the hero and stay there until the catalogue arrived — measured
++   at 2.5 to 3 seconds on a phone, which is exactly the visitor a reel sends.
++   The value is read again at the foot of <main>, where the views exist.
++   Placed above the stylesheet on purpose: a script below it waits for the
++   sheet to arrive before running, and the preload was issued 780ms late. */
++(function () {
++  var m = /^#\/(p|c|order|done|policy)(\/|$)/.exec(location.hash);
++  if (m) document.documentElement.setAttribute("data-route", m[1]);
++  else {
++    /* the hero photograph is the first thing a front-door visitor sees, so
++       it is started before the parser reaches the markup — but only for
++       them: a product link never shows it */
++    var l = document.createElement("link");
++    l.rel = "preload"; l.as = "image"; l.href = "assets/hero-camera.webp";
++    l.type = "image/webp"; l.setAttribute("fetchpriority", "high");
++    document.head.appendChild(l);
++  }
++})();
++</script>
+ <title>Starshopping — гэр ахуйн бараа</title>
+ <!-- Present before any script runs, then kept in step with the route by
+      `setHead` in script.js. A hash never reaches a crawler, so every
+@@ -35,7 +57,6 @@
+ <!-- the hero photo and the display face are the first things anyone sees;
+      start them before the parser reaches the markup rather than after the
+      stylesheet resolves -->
+-<link rel="preload" as="image" href="assets/hero-camera.webp" type="image/webp" fetchpriority="high">
+ <link rel="preload" as="font" type="font/woff2" href="assets/fonts/montserrat-latin.woff2" crossorigin>
+ 
+ <!-- Meta Pixel -->
+@@ -94,7 +115,9 @@ src="https://www.facebook.com/tr?id=1409055724744932&ev=PageView&noscript=1"/></
+         <div class="hero__cam">
+           <picture>
+             <source srcset="assets/hero-camera.webp" type="image/webp">
+-            <img src="assets/hero-camera.png" alt="Онцлох бүтээгдэхүүн — камер" fetchpriority="high">
++            <!-- lazy so a hidden home view never fetches it; on the front door the
++                 preload above has already brought it in -->
++            <img src="assets/hero-camera.png" alt="Онцлох бүтээгдэхүүн — камер" fetchpriority="high" loading="lazy">
+           </picture>
+         </div>
+         <span class="hero__word hero__word--front" style="--chars:8">SHOPPING</span>
+@@ -158,6 +181,26 @@ src="https://www.facebook.com/tr?id=1409055724744932&ev=PageView&noscript=1"/></
+   </div>
+ 
+ </main>
++<script>
++/* A product or category link lands on its own view from the first paint,
++   showing the same skeleton the shop draws while its catalogue is on its way.
++   The catalogue code takes over from here exactly as before. */
++(function () {
++  var r = document.documentElement.getAttribute("data-route");
++  if (!r) return;
++  document.getElementById("viewHome").hidden = true;
++  document.getElementById("rail").hidden = true;
++  if (r === "p") {
++    document.getElementById("viewProduct").hidden = false;
++    document.getElementById("pdp").innerHTML =
++      '<div class="pending"><div class="pending__frame"></div>' +
++      '<div class="pending__bar pending__bar--wide"></div><div class="pending__bar"></div>' +
++      '<p class="pending__note">Бараа ачаалж байна…</p></div>';
++  } else if (r === "c") {
++    document.getElementById("viewCategory").hidden = false;
++  }
++})();
++</script>
+ 
+ <footer class="foot">
+   <div class="foot__inner">
+-- 
+2.43.0
+
